@@ -1,0 +1,27 @@
+{
+  "name": "next-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "*",
+    "react": "*",
+    "react-dom": "*",
+    "tailwindcss": "*",
+    "eslint": "*",
+    "prettier": "*",
+    "@shadcn/ui": "*",
+    "sonner": "*"
+  },
+  "devDependencies": {
+    "typescript": "*",
+    "@types/node": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*"
+  }
+}
