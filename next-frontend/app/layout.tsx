@@ -9,7 +9,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Bema Hub - Connect, Create, Celebrate",
+  title: "Bema Hub",
   description: "Empower Artists and Fans with Echo Loop",
 };
 
