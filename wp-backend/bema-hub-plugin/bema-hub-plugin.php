@@ -69,4 +69,5 @@ function run_bema_hub_plugin() {
     $plugin->run();
 }
 
+// Initialize the plugin
 run_bema_hub_plugin();

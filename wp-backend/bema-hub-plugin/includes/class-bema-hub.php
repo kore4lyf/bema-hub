@@ -128,6 +128,16 @@ class Bema_Hub {
 		 */
 		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/notification/class-bema-crm-notifier.php';
 
+		/**
+		 * The JWT authentication class.
+		 */
+		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/auth/class-bema-hub-jwt-auth.php';
+
+		/**
+		 * The REST API controller class.
+		 */
+		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/rest/class-bema-hub-rest-api.php';
+
 		$this->loader = new Bema_Hub_Loader();
 	}
 
@@ -169,6 +179,10 @@ class Bema_Hub {
 		$plugin_public = new Bema_Hub_Public( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
+		
+		// Register REST API routes
+		$rest_api = new Bema_Hub_REST_API();
+		$this->loader->add_action( 'rest_api_init', $rest_api, 'register_routes' );
 	}
 
 	/**
@@ -209,5 +223,27 @@ class Bema_Hub {
 	 */
 	public function get_version() {
 		return $this->version;
+	}
+
+	/**
+	 * Verify that JWT authentication routes are properly registered
+	 *
+	 * @since     1.0.0
+	 * @return    array    Verification results
+	 */
+	public function verify_jwt_routes() {
+		// This is a placeholder method that would be used to verify
+		// that the JWT authentication routes are properly registered
+		// In a real implementation, this would check the REST server
+		
+		return [
+			'status' => 'verification_not_implemented',
+			'message' => 'Route verification should be done through WordPress REST API tools',
+			'recommended_actions' => [
+				'Use WP-CLI: wp rest route list --match=bema-hub',
+				'Check Tools > Site Health in WordPress Admin',
+				'Test endpoints directly with curl or Postman'
+			]
+		];
 	}
 }
