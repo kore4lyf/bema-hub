@@ -56,7 +56,8 @@ class Bema_Hub_JWT_Auth {
             if ($this->logger) {
                 $this->logger->error('Failed to generate token: JWT_SECRET not defined');
             }
-            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET not defined', ['status' => 500]);
+            // Return a more user-friendly error
+            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
         }
 
         // Create the token payload
@@ -100,8 +101,9 @@ class Bema_Hub_JWT_Auth {
      * @return string|WP_Error The encoded token or WP_Error on failure
      */
     private function encode_token($payload) {
+        // Check if JWT_SECRET is defined
         if (!defined('JWT_SECRET')) {
-            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET not defined', ['status' => 500]);
+            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
         }
 
         $header = $this->base64url_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
@@ -121,8 +123,9 @@ class Bema_Hub_JWT_Auth {
      * @return array|WP_Error The decoded token data or WP_Error on failure
      */
     public function validate_token($token) {
+        // Check if JWT_SECRET is defined
         if (!defined('JWT_SECRET')) {
-            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET not defined', ['status' => 500]);
+            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
         }
 
         // Split the token
@@ -204,7 +207,7 @@ class Bema_Hub_JWT_Auth {
         // Generate token
         $token = $this->generate_token($user->ID);
         
-        if (is_wp_error($token)) {
+        if (\is_wp_error($token)) {
             return $token;
         }
 

@@ -95,48 +95,50 @@ class Bema_Hub {
 	 * @access   private
 	 */
 	private function load_dependencies() {
+		$plugin_dir = plugin_dir_path( __FILE__ );
+		
 		/**
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-bema-hub-loader.php';
+		require_once $plugin_dir . 'class-bema-hub-loader.php';
 
 		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-bema-hub-i18n.php';
+		require_once $plugin_dir . 'class-bema-hub-i18n.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-bema-hub-admin.php';
+		require_once $plugin_dir . '../admin/class-bema-hub-admin.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
 		 * side of the site.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-bema-hub-public.php';
+		require_once $plugin_dir . '../public/class-bema-hub-public.php';
 
 		/**
 		 * The logger class.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/logger/class-bema-logger.php';
+		require_once $plugin_dir . 'logger/class-bema-logger.php';
 
 		/**
 		 * The notification class.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/notification/class-bema-crm-notifier.php';
+		require_once $plugin_dir . 'notification/class-bema-crm-notifier.php';
 
 		/**
 		 * The JWT authentication class.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/auth/class-bema-hub-jwt-auth.php';
+		require_once $plugin_dir . 'auth/class-bema-hub-jwt-auth.php';
 
 		/**
 		 * The REST API controller class.
 		 */
-		require_once \plugin_dir_path( dirname( __FILE__ ) ) . 'includes/rest/class-bema-hub-rest-api.php';
+		require_once $plugin_dir . 'rest/class-bema-hub-rest-api.php';
 
 		$this->loader = new Bema_Hub_Loader();
 	}
@@ -163,7 +165,7 @@ class Bema_Hub {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
-		$plugin_admin = new Bema_Hub_Admin( $this->get_plugin_name(), $this->get_version() );
+		$plugin_admin = new \Bema_Hub\Admin\Bema_Hub_Admin( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 	}
@@ -176,12 +178,12 @@ class Bema_Hub {
 	 * @access   private
 	 */
 	private function define_public_hooks() {
-		$plugin_public = new Bema_Hub_Public( $this->get_plugin_name(), $this->get_version() );
+		$plugin_public = new \Bema_Hub\Frontend\Bema_Hub_Public( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 		
 		// Register REST API routes
-		$rest_api = new Bema_Hub_REST_API();
+		$rest_api = new \Bema_Hub\Bema_Hub_REST_API();
 		$this->loader->add_action( 'rest_api_init', $rest_api, 'register_routes' );
 	}
 

@@ -43,7 +43,7 @@ class Bema_Hub_REST_API {
 
         // Initialize JWT auth
         if (class_exists('Bema_Hub\Bema_Hub_JWT_Auth')) {
-            $this->jwt_auth = new Bema_Hub_JWT_Auth();
+            $this->jwt_auth = new \Bema_Hub\Bema_Hub_JWT_Auth();
         }
     }
 
