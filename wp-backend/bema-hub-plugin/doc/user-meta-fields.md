@@ -11,6 +11,7 @@ This document describes all the custom user meta fields used in the Bema Hub plu
 5. [Security Fields](#security-fields)
 6. [Verification Fields](#verification-fields)
 7. [Implementation Details](#implementation-details)
+8. [Complete Field Reference](#complete-field-reference)
 
 ## Required Fields
 
@@ -94,6 +95,13 @@ These fields are automatically managed by the system.
 - **Encrypted**: No
 - **Default**: Current timestamp (updated on each login)
 
+### bema_last_signout
+- **Type**: Timestamp
+- **Description**: Timestamp of last signout
+- **Required**: No (auto-set)
+- **Encrypted**: No
+- **Default**: Current timestamp (updated on each signout)
+
 ## Social Login Fields
 
 These fields store OAuth IDs for social login providers.
@@ -150,9 +158,9 @@ These fields track user verification status.
 
 ### bema_otp_code
 - **Type**: String
-- **Description**: Hashed OTP code for email verification
+- **Description**: SHA256 hashed OTP code for email verification
 - **Required**: Yes (during email signup)
-- **Encrypted**: Yes (hashed with `wp_hash_password`)
+- **Encrypted**: Yes (hashed with SHA256)
 - **Default**: None
 
 ### bema_otp_expiry
@@ -162,6 +170,32 @@ These fields track user verification status.
 - **Encrypted**: No
 - **Default**: None
 
+## Complete Field Reference
+
+This is a complete reference of all user meta fields used in the Bema Hub plugin:
+
+| Field Name | Type | Required | Description |
+|------------|------|----------|-------------|
+| bema_first_name | String | Yes | User's first name |
+| bema_last_name | String | Yes | User's last name |
+| bema_phone_number | String | No | User's phone number (encrypted) |
+| bema_country | String | Yes | User's country |
+| bema_city | String | No | User's city |
+| bema_referred_by | String | No | Referral code |
+| bema_device_id | String | Yes | Auto-generated device ID for fraud detection |
+| bema_tier_level | Enum | Yes | User's tier level (Opt-In, Gold, VIP) |
+| bema_account_type | Enum | Yes | User's account type (subscriber, admin) |
+| bema_last_signin | Timestamp | Yes | Timestamp of last signin |
+| bema_last_signout | Timestamp | No | Timestamp of last signout |
+| bema_google_id | String | No | Google OAuth ID |
+| bema_facebook_id | String | No | Facebook OAuth ID |
+| bema_x_id | String | No | X/Twitter OAuth ID |
+| bema_fraud_flag | Boolean | Yes | Flag for suspicious activity |
+| bema_email_verified | Boolean | Yes | Email verification status |
+| bema_phone_verified | Boolean | Yes | Phone verification status |
+| bema_otp_code | String | Yes | SHA256 hashed OTP code for email verification |
+| bema_otp_expiry | Timestamp | Yes | OTP code expiration timestamp |
+
 ## Implementation Details
 
 ### Field Creation
@@ -170,7 +204,7 @@ User meta fields are created during the user registration process in the followi
 - `social_login()` method in `Bema_Hub_REST_API` class
 
 ### Field Encryption
-Sensitive fields like phone numbers are encrypted using base64 encoding as a placeholder. In a production environment, a proper encryption library should be used.
+Sensitive fields like phone numbers are encrypted using base64 encoding as a placeholder. OTP codes are hashed using SHA256 for security. In a production environment, a proper encryption library should be used for sensitive data.
 
 ### Field Validation
 All fields are validated during registration:
@@ -182,6 +216,7 @@ All fields are validated during registration:
 ### Field Updates
 Fields are updated automatically during various operations:
 - `bema_last_signin` is updated on each login
+- `bema_last_signout` is updated on each signout
 - `bema_email_verified` is set to true after OTP verification
 - `bema_phone_verified` is set to true when a phone number is provided
 - Social login fields are set when linking social accounts
@@ -209,4 +244,5 @@ delete_user_meta($user_id, 'bema_otp_expiry');
 4. **Cleanup**: Remove temporary fields (like OTP) after use
 5. **Security**: Use WordPress functions for hashing and validation
 6. **Consistency**: Use consistent naming conventions (bema_ prefix)
-7. **Documentation**: Keep this document updated with any field changes
+7. **Logging**: Ensure security events are properly logged for monitoring
+8. **Documentation**: Keep this document updated with any field changes

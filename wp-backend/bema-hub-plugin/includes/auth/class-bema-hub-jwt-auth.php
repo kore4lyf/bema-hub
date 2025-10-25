@@ -222,6 +222,27 @@ class Bema_Hub_JWT_Auth {
     }
 
     /**
+     * Verify an OTP code against a stored hash
+     *
+     * @since 1.0.0
+     * @param string $otp_code The OTP code to verify
+     * @param string $stored_hash The stored hash to compare against
+     * @return bool True if OTP is valid, false otherwise
+     */
+    public function wp_verify_otp($otp_code, $stored_hash) {
+        // Use hash_equals for timing attack prevention
+        $result = \hash_equals($stored_hash, \hash('sha256', $otp_code));
+        
+        if ($this->logger) {
+            $this->logger->info('OTP verification attempt', [
+                'result' => $result ? 'success' : 'failure'
+            ]);
+        }
+        
+        return $result;
+    }
+
+    /**
      * Base64 URL encode
      *
      * @since 1.0.0

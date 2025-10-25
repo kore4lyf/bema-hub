@@ -20,6 +20,7 @@ The Bema Hub plugin implements a complete authentication system with support for
 - **POST `/wp-json/bema-hub/v1/auth/verify-otp`**: OTP verification for email signup
 - **POST `/wp-json/bema-hub/v1/auth/signin`**: Traditional login with username/email and password
 - **POST `/wp-json/bema-hub/v1/auth/social-login`**: Social login for Google, Facebook, and Twitter
+- **POST `/wp-json/bema-hub/v1/auth/signout`**: Signs out the currently authenticated user
 - **POST `/wp-json/bema-hub/v1/auth/validate`**: JWT token validation
 
 #### Protected Endpoints
@@ -90,6 +91,8 @@ All required custom user meta fields have been implemented:
 - HS256 algorithm for token signing
 - 7-day token expiration
 - Secure token validation
+- Token invalidation on signout
+- Comprehensive logging for security monitoring
 - Proper error handling
 
 #### Data Protection
@@ -97,6 +100,7 @@ All required custom user meta fields have been implemented:
 - OTP codes hashed before storage
 - Input validation and sanitization
 - HTTPS-only communication recommended
+- Security events logged for monitoring
 
 #### Account Security
 - Unique username generation
@@ -174,8 +178,8 @@ Handles JWT token generation and validation:
   - `update_user_meta()`: Sets user meta fields
   - `get_user_meta()`: Retrieves user meta fields
   - `delete_user_meta()`: Removes user meta fields
-  - `wp_hash_password()`: Hashes OTP codes
-  - `wp_check_password()`: Verifies OTP codes
+  - `wp_hash_password()`: Hashes OTP codes (deprecated for OTP)
+  - Custom OTP verification using SHA256 hashing
 
 #### Constants Required
 - `JWT_SECRET`: Defined in `wp-config.php` for JWT token signing
@@ -194,6 +198,7 @@ Handles JWT token generation and validation:
    - OTP verification: POST to `/auth/verify-otp` (now uses email instead of user ID)
    - Traditional login: POST to `/auth/signin`
    - Social login: POST to `/auth/social-login`
+   - Signout: POST to `/auth/signout`
    - Token validation: POST to `/auth/validate`
    - Profile access: GET to `/profile` (with Authorization header)
 

@@ -221,6 +221,58 @@ async function handleTwitterLogin(twitterUserData) {
 
 ## Traditional Login
 
+## User Signout
+
+To sign out a user, make a POST request to the signout endpoint. This endpoint requires authentication with a valid JWT token.
+
+```javascript
+async function signout() {
+  try {
+    const token = localStorage.getItem('authToken');
+    
+    const response = await fetch(`${API_BASE_URL}/auth/signout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Signout failed');
+    }
+    
+    // Clear the token from storage
+    localStorage.removeItem('authToken');
+    
+    // Redirect to login page or home page
+    window.location.href = '/login';
+    
+    return data;
+  } catch (error) {
+    console.error('Signout error:', error);
+    throw error;
+  }
+}
+
+// Usage
+signout()
+  .then(result => {
+    console.log('Signout successful:', result);
+  })
+  .catch(error => {
+    console.error('Signout failed:', error);
+    // Even if the API call fails, clear the token locally
+    localStorage.removeItem('authToken');
+    window.location.href = '/login';
+  });
+```
+
+The signout endpoint now implements JWT token invalidation by adding the token to a blacklist on the server. This prevents the token from being used for further requests. The client-side token removal ensures the token is also cleared from the user's browser.
+
+
 ```javascript
 async function loginUser(credentials) {
   try {
@@ -498,6 +550,8 @@ async function login(credentials) {
 
 6. **Social Login**: Handle cases where users revoke social app permissions.
 
-7. **Logging**: Log authentication events for security monitoring (on the backend).
+7. **Logging**: All authentication events are logged for security monitoring (on the backend), including signout events and token validation attempts.
+
+8. **Signout Handling**: Call the signout endpoint to invalidate the token on the server and clear tokens from local storage. Redirect users appropriately after signout.
 
 This guide provides a comprehensive foundation for integrating the Bema Hub plugin API into your frontend application. Adjust the implementation details based on your specific framework and requirements.

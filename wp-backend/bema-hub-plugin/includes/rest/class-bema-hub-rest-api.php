@@ -31,6 +31,15 @@ class Bema_Hub_REST_API {
     private $jwt_auth;
 
     /**
+     * Array to store invalidated tokens (in production, this should be stored in database)
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      array    $invalidated_tokens    List of invalidated tokens.
+     */
+    private $invalidated_tokens = array();
+
+    /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
@@ -45,6 +54,9 @@ class Bema_Hub_REST_API {
         if (class_exists('Bema_Hub\Bema_Hub_JWT_Auth')) {
             $this->jwt_auth = new \Bema_Hub\Bema_Hub_JWT_Auth();
         }
+
+        // Load invalidated tokens from database
+        $this->invalidated_tokens = \get_option('bema_hub_invalidated_tokens', array());
     }
 
     /**
@@ -84,6 +96,13 @@ class Bema_Hub_REST_API {
             'methods' => 'POST',
             'callback' => array($this, 'social_login'),
             'permission_callback' => '__return_true',
+        ));
+
+        // Register signout route
+        \register_rest_route('bema-hub/v1', '/auth/signout', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'signout'),
+            'permission_callback' => array($this, 'validate_jwt_permission'),
         ));
 
         // Register protected routes example
@@ -198,8 +217,8 @@ class Bema_Hub_REST_API {
         $otp_code = \rand(100000, 999999);
         $otp_expiry = \time() + 600; // 10 minutes expiry (increased from 5 minutes)
         
-        // Hash OTP before storing
-        $hashed_otp = \wp_hash_password($otp_code);
+        // Hash OTP before storing using SHA256
+        $hashed_otp = \hash('sha256', $otp_code);
         \update_user_meta($user_id, 'bema_otp_code', $hashed_otp);
         \update_user_meta($user_id, 'bema_otp_expiry', $otp_expiry);
         
@@ -271,8 +290,8 @@ class Bema_Hub_REST_API {
             return new \WP_Error('otp_expired', 'OTP code has expired. Please request a new one.', array('status' => 400));
         }
 
-        // Verify OTP
-        if (!\wp_check_password($otp_code, $stored_otp)) {
+        // Verify OTP using JWT auth helper function
+        if (!$this->jwt_auth->wp_verify_otp($otp_code, $stored_otp)) {
             if ($this->logger) {
                 $this->logger->warning('OTP verification failed: Invalid OTP', array('user_id' => $user->ID));
             }
@@ -544,6 +563,53 @@ class Bema_Hub_REST_API {
     }
 
     /**
+     * Handle user signout
+     *
+     * @since 1.0.0
+     * @param \WP_REST_Request $request The request object
+     * @return \WP_REST_Response|\WP_Error The response or error
+     */
+    public function signout($request) {
+        // The user ID is added to the request by the permission callback
+        $user_id = $request->get_param('user_id');
+
+        // Get user data for logging
+        $user = \get_user_by('ID', $user_id);
+        if (!$user) {
+            if ($this->logger) {
+                $this->logger->warning('Signout attempt for non-existent user', array('user_id' => $user_id));
+            }
+            return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
+        }
+
+        // Get the token from the authorization header
+        $auth_header = $request->get_header('authorization');
+        $token = \substr($auth_header, 7); // Remove 'Bearer ' prefix
+
+        // Add token to invalidated tokens list
+        $this->invalidated_tokens[] = $token;
+        
+        if ($this->logger) {
+            $this->logger->info('Token invalidated during signout', array('user_id' => $user_id, 'token' => substr($token, 0, 10) . '...'));
+        }
+        
+        // Save invalidated tokens to database
+        \update_option('bema_hub_invalidated_tokens', $this->invalidated_tokens);
+
+        // Update last signout time
+        \update_user_meta($user_id, 'bema_last_signout', \time());
+
+        if ($this->logger) {
+            $this->logger->info('User signout successful', array('user_id' => $user_id, 'user_email' => $user->user_email));
+        }
+
+        return new \WP_REST_Response(array(
+            'success' => true,
+            'message' => 'Successfully signed out'
+        ), 200);
+    }
+
+    /**
      * Validate a JWT token
      *
      * @since 1.0.0
@@ -634,6 +700,14 @@ class Bema_Hub_REST_API {
         }
 
         $token = \substr($auth_header, 7); // Remove 'Bearer ' prefix
+
+        // Check if token is in invalidated list
+        if (in_array($token, $this->invalidated_tokens)) {
+            if ($this->logger) {
+                $this->logger->warning('Token validation failed: Token has been invalidated', array('token' => substr($token, 0, 10) . '...'));
+            }
+            return new \WP_Error('token_invalidated', 'Token has been invalidated', array('status' => 401));
+        }
 
         $result = $this->jwt_auth->validate_token($token);
 

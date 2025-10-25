@@ -44,6 +44,12 @@ These endpoints handle user authentication and token management.
 - **Description**: Authenticate with Google, Facebook, or Twitter
 - **Details**: [endpoint-auth-social-login.md](endpoint-auth-social-login.md)
 
+### 6. Signout
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/signout`
+- **Method**: `POST`
+- **Description**: Sign out the currently authenticated user
+- **Details**: [endpoint-auth-signout.md](endpoint-auth-signout.md)
+
 ## Protected Endpoints
 
 These endpoints require a valid JWT token in the Authorization header.
@@ -63,7 +69,8 @@ These endpoints require a valid JWT token in the Authorization header.
 5. **Token Storage**: Client stores the token securely (e.g., in localStorage or HttpOnly cookies)
 6. **Authenticated Requests**: Client includes the token in the Authorization header for subsequent requests
 7. **Token Validation**: Server validates the token before processing protected endpoint requests
-8. **Token Refresh**: When token expires, client must re-authenticate
+8. **User Signout**: Client can sign out by calling the signout endpoint and clearing the token
+9. **Token Refresh**: When token expires, client must re-authenticate
 
 ### Example Flow
 ```javascript
@@ -109,6 +116,16 @@ const profileResponse = await fetch('/wp-json/bema-hub/v1/profile', {
 });
 
 const profileData = await profileResponse.json();
+
+// 6. Sign out
+const signoutResponse = await fetch('/wp-json/bema-hub/v1/auth/signout', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+
+const signoutData = await signoutResponse.json();
+// Clear token from storage
+localStorage.removeItem('authToken');
 ```
 
 ## Error Handling
@@ -142,9 +159,11 @@ All endpoints return appropriate HTTP status codes and JSON error responses:
 5. **Input Validation**: All input is validated and sanitized
 6. **Strong Secrets**: Use a strong, unique `JWT_SECRET` in wp-config.php
 7. **Error Information**: Error messages do not expose sensitive information
-8. **OTP Security**: OTP codes expire after 5 minutes and are hashed before storage
+8. **OTP Security**: OTP codes expire after 10 minutes and are SHA256 hashed before storage
 9. **Data Encryption**: Sensitive data like phone numbers are encrypted before storage
 10. **Social Login**: Social login users are automatically verified
+11. **Signout**: Users can sign out to terminate their session with token invalidation
+12. **Logging**: All authentication events are logged for security monitoring
 
 ## Implementation Notes
 
