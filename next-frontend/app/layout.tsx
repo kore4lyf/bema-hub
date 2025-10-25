@@ -1,22 +1,37 @@
-import './globals.css'
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import type { Metadata } from "next";
+import { Outfit } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "next-themes";
 
-const inter = Inter({ subsets: ['latin'] })
+const outfit = Outfit({
+  variable: "--outfit-sans",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: 'Bema Hub',
-  description: 'Campaign-based platform for supporters',
-}
+  title: "Bema Hub - Connect, Create, Celebrate",
+  description: "Empower Artists and Fans with Echo Loop",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${outfit.className} antialiased`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
-  )
-}
+  );
+}      
