@@ -1,6 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/custom/Navbar";
+import { Footer } from "@/components/custom/footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -247,6 +248,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           </div>
         </div>
       </main>
+      <Footer />
     </>
   );
 }

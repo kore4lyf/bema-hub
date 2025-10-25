@@ -1,6 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/custom/Navbar";
+import { Footer } from "@/components/custom/footer";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -277,6 +278,7 @@ export default function CampaignsPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </>
   );
 }

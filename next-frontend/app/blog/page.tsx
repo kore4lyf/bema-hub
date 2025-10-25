@@ -1,6 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/custom/Navbar";
+import { Footer } from "@/components/custom/footer";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -254,6 +255,7 @@ export default function BlogPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </>
   );
 }
