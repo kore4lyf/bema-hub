@@ -1,13 +1,13 @@
-# Authentication Login Endpoint
+# User Authentication Endpoint
 
 ## Endpoint Details
-- **URL**: `/wp-json/bema-hub/v1/auth/login`
+- **URL**: `/wp-json/bema-hub/v1/auth/signin`
 - **Method**: `POST`
 - **Authentication**: None (Public endpoint)
-- **Permissions**: Any user with valid credentials
+- **Permissions**: Authorized users with valid credentials
 
 ## Description
-This endpoint authenticates a user with their username/email and password, and returns a JWT token that can be used for subsequent authenticated requests.
+This endpoint authenticates users with their username or email address and password, then returns a JWT token for subsequent authorized requests.
 
 ## Request Body
 ```json
@@ -20,8 +20,8 @@ This endpoint authenticates a user with their username/email and password, and r
 ### Parameters
 | Parameter | Type   | Required | Description                          |
 |-----------|--------|----------|--------------------------------------|
-| username  | string | Yes      | User's username or email address     |
-| password  | string | Yes      | User's password                      |
+| username  | string | Yes      | Username or email address     |
+| password  | string | Yes      | Account password                      |
 
 ## Success Response
 
@@ -38,12 +38,12 @@ This endpoint authenticates a user with their username/email and password, and r
 
 ## Error Responses
 
-### Invalid Credentials
+### Authentication Failed
 **Code**: 401 Unauthorized
 ```json
 {
   "code": "invalid_login",
-  "message": "Invalid username or password",
+  "message": "Authentication failed. Please check your credentials.",
   "data": {
     "status": 401
   }
@@ -62,12 +62,24 @@ This endpoint authenticates a user with their username/email and password, and r
 }
 ```
 
+### Invalid Parameter Types
+**Code**: 400 Bad Request
+```json
+{
+  "code": "invalid_parameters",
+  "message": "Username and password must be strings",
+  "data": {
+    "status": 400
+  }
+}
+```
+
 ## Usage Examples
 
 ### cURL
 ```bash
 curl -X POST \
-  https://yoursite.com/wp-json/bema-hub/v1/auth/login \
+  https://yoursite.com/wp-json/bema-hub/v1/auth/signin \
   -H 'Content-Type: application/json' \
   -d '{
     "username": "admin",
@@ -77,7 +89,7 @@ curl -X POST \
 
 ### JavaScript (Fetch API)
 ```javascript
-fetch('/wp-json/bema-hub/v1/auth/login', {
+fetch('/wp-json/bema-hub/v1/auth/signin', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -90,11 +102,11 @@ fetch('/wp-json/bema-hub/v1/auth/login', {
 .then(response => response.json())
 .then(data => {
   if (response.ok) {
-    // Store the token for future requests
+    // Store the authentication token for future API requests
     localStorage.setItem('authToken', data.token);
-    console.log('Login successful');
+    console.log('Authentication successful');
   } else {
-    console.error('Login failed:', data.message);
+    console.error('Authentication failed:', data.message);
   }
 })
 .catch(error => {
@@ -104,18 +116,22 @@ fetch('/wp-json/bema-hub/v1/auth/login', {
 
 ## Implementation Details
 
-This endpoint is implemented in the `Bema_Hub_REST_API` class in the `login` method. The process involves:
+This endpoint is implemented in the `Bema_Hub_REST_API` class in the `login` method. The authentication process involves:
 
 1. Validating that both username and password are provided
-2. Authenticating the user using WordPress's `wp_authenticate` function
-3. If authentication is successful, generating a JWT token with user information
-4. Returning the token and user data in the response
-5. Logging the authentication attempt (success or failure)
+2. Validating that both parameters are strings
+3. Sanitizing the username parameter
+4. Authenticating the user using WordPress's `wp_authenticate` function
+5. If authentication is successful, generating a JWT token with user information
+6. Returning the token and user data in the response
+7. Logging the authentication attempt (success or failure)
 
 ## Security Considerations
 
-1. All communication should happen over HTTPS
+1. All communication must use HTTPS encryption
 2. Passwords are never stored in logs or responses
-3. Rate limiting should be implemented to prevent brute force attacks
-4. Tokens should be stored securely in the client application
-5. Tokens expire after 7 days for security
+3. Input validation ensures only string parameters are accepted
+4. Username parameter is sanitized to prevent injection attacks
+5. Rate limiting should be implemented to prevent brute force attacks
+6. Tokens should be stored securely in the client application
+7. Tokens expire after 7 days for enhanced security
