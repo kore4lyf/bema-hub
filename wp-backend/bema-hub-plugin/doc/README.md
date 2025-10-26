@@ -35,7 +35,7 @@ These endpoints handle user authentication and token management.
 ### 4. OTP Verification
 - **Endpoint**: `/wp-json/bema-hub/v1/auth/verify-otp`
 - **Method**: `POST`
-- **Description**: Verify email with OTP code
+- **Description**: Verify OTP code for email verification or password reset
 - **Details**: [endpoint-auth-verify-otp.md](endpoint-auth-verify-otp.md)
 
 ### 5. Social Login
@@ -49,6 +49,12 @@ These endpoints handle user authentication and token management.
 - **Method**: `POST`
 - **Description**: Sign out the currently authenticated user
 - **Details**: [endpoint-auth-signout.md](endpoint-auth-signout.md)
+
+### 7. Password Reset Request
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/reset-password-request`
+- **Method**: `POST`
+- **Description**: Request a password reset OTP code
+- **Details**: [endpoint-auth-reset-password-request.md](endpoint-auth-reset-password-request.md)
 
 ## Protected Endpoints
 
@@ -70,7 +76,8 @@ These endpoints require a valid JWT token in the Authorization header.
 6. **Authenticated Requests**: Client includes the token in the Authorization header for subsequent requests
 7. **Token Validation**: Server validates the token before processing protected endpoint requests
 8. **User Signout**: Client can sign out by calling the signout endpoint and clearing the token
-9. **Token Refresh**: When token expires, client must re-authenticate
+9. **Password Reset**: Users can reset forgotten passwords using the password reset flow
+10. **Token Refresh**: When token expires, client must re-authenticate
 
 ### Example Flow
 ```javascript
@@ -83,7 +90,8 @@ const signupResponse = await fetch('/wp-json/bema-hub/v1/auth/signup', {
     password: 'securepassword',
     first_name: 'John',
     last_name: 'Doe',
-    country: 'United States'
+    country: 'United States',
+    state: 'New York'
   })
 });
 
@@ -163,8 +171,42 @@ All endpoints return appropriate HTTP status codes and JSON error responses:
 9. **Data Encryption**: Sensitive data like phone numbers are encrypted before storage
 10. **Social Login**: Social login users are automatically verified
 11. **Signout**: Users can sign out to terminate their session with token invalidation
-12. **Logging**: All authentication events are logged for security monitoring
+12. **Password Reset**: Password reset uses OTP verification and temporary tokens
+13. **Shared OTP Fields**: Single OTP field reused for all verification purposes (email, phone, password reset)
+14. **Modular Architecture**: Controllers separated by functionality for better maintainability
+15. **Logging**: All authentication events are logged for security monitoring
+16. **Audit Trail**: Comprehensive logging provides an audit trail for all authentication events
+17. **Token Persistence**: Invalidated tokens are persisted across requests for proper security
 
 ## Implementation Notes
 
 The API is built using WordPress REST API standards and follows best practices for security and performance. All endpoints are registered during the `rest_api_init` hook and are automatically available when the plugin is activated.
+
+### Architecture
+
+The system follows a modular controller-based architecture:
+- **Auth Controller**: Handles authentication endpoints (login, signup, social login)
+- **OTP Controller**: Manages OTP-related functionality (verification, password reset)
+- **User Controller**: Manages user operations (profile, signout, token validation)
+- **Main REST API Class**: Registers routes and coordinates controllers
+
+### Token Invalidation
+
+The system implements proper token invalidation:
+- When a user signs out, their token is added to an invalidated tokens list
+- This list is persisted to the WordPress options table
+- On subsequent requests, invalidated tokens are rejected
+- The persistence mechanism ensures security across page loads
+
+### Logger Implementation
+
+The Bema Hub plugin uses a comprehensive logging system for security monitoring:
+
+- **Bema_Hub_Logger**: Custom logging class that stores logs securely in the WordPress uploads directory
+- **Log Levels**: All authentication events are logged with appropriate levels (INFO, WARNING, ERROR)
+- **Security Events**: Signout events, token validation attempts, OTP verification, and authentication attempts are all logged
+- **Sensitive Data Protection**: Full tokens and OTP codes are never logged, only previews
+- **Automatic Cleanup**: Logs are automatically cleaned up after 30 days
+- **Performance Monitoring**: Performance timing is available for critical operations
+
+For detailed information about the logger implementation, see [logger-implementation-summary.md](logger-implementation-summary.md).

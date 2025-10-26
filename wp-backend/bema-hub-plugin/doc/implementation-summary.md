@@ -1,233 +1,244 @@
-# Bema Hub Plugin - Authentication Implementation Summary
+# Bema Hub Plugin Implementation Summary
 
-This document provides a comprehensive summary of the authentication system implemented in the Bema Hub plugin.
+This document provides a comprehensive overview of the Bema Hub plugin implementation, including the architecture, data structures, and key components.
 
-## Overview
+## Architecture Overview
 
-The Bema Hub plugin implements a complete authentication system with support for:
-- Traditional email/password signup and login
-- Social login (Google, Facebook, Twitter/X)
-- Email verification via OTP
-- JWT-based token authentication
-- Comprehensive user meta field management
+The Bema Hub plugin follows a modular, controller-based architecture that separates concerns and promotes maintainability:
 
-## Implemented Features
+### Main Components
 
-### 1. REST API Endpoints
+1. **Main Plugin Class** (`class-bema-hub.php`)
+   - Initializes the plugin and registers hooks
+   - Loads dependencies and sets up the REST API
 
-#### Authentication Endpoints
-- **POST `/wp-json/bema-hub/v1/auth/signup`**: User registration with email verification
-- **POST `/wp-json/bema-hub/v1/auth/verify-otp`**: OTP verification for email signup
-- **POST `/wp-json/bema-hub/v1/auth/signin`**: Traditional login with username/email and password
-- **POST `/wp-json/bema-hub/v1/auth/social-login`**: Social login for Google, Facebook, and Twitter
-- **POST `/wp-json/bema-hub/v1/auth/signout`**: Signs out the currently authenticated user
-- **POST `/wp-json/bema-hub/v1/auth/validate`**: JWT token validation
+2. **REST API Controller** (`class-bema-hub-rest-api.php`)
+   - Registers all REST API endpoints
+   - Coordinates between controllers
+   - Handles token persistence
 
-#### Protected Endpoints
-- **GET `/wp-json/bema-hub/v1/profile`**: User profile information (requires valid JWT token)
+3. **Controller Classes** (in `controllers/` directory)
+   - **Auth Controller**: Handles authentication endpoints (login, signup, social login)
+   - **OTP Controller**: Manages OTP-related functionality (verification, password reset)
+   - **User Controller**: Manages user operations (profile, signout, token validation)
 
-### 2. User Registration Flow
+4. **JWT Authentication** (`class-bema-hub-jwt-auth.php`)
+   - Generates and validates JWT tokens
+   - Handles user authentication
 
-#### Email Signup Process
-1. User submits registration data (email, password, name, etc.)
+5. **Logger** (`class-bema-logger.php`)
+   - Provides comprehensive logging for security monitoring
+   - Stores logs securely with automatic cleanup
+
+### Data Flow
+
+1. Plugin initialization loads all dependencies
+2. REST API routes are registered during the `rest_api_init` hook
+3. Incoming requests are routed to appropriate controllers
+4. Controllers handle business logic and return responses
+5. Security events are logged throughout the process
+
+## User Data Structure
+
+### WordPress User Table (wp_users)
+- `ID` - Auto-incrementing user ID
+- `user_login` - Generated from email (e.g., user@example.com becomes user_example_com)
+- `user_pass` - Hashed password
+- `user_email` - User's email address
+- `user_registered` - Registration timestamp
+- `display_name` - User's full name (first_name last_name)
+
+### Custom User Meta Fields (wp_usermeta)
+
+All custom fields use the `bema_` prefix to avoid conflicts:
+
+| Field Name | Type | Description |
+|------------|------|-------------|
+| bema_first_name | String | User's first name |
+| bema_last_name | String | User's last name |
+| bema_phone_number | String (Encrypted) | User's phone number (encrypted) |
+| bema_country | String | User's country |
+| bema_state | String (Optional) | User's state |
+| bema_referred_by | String (Optional) | Referral code or user ID |
+| bema_tier_level | String | User's tier level (Opt-In, Bronze, Silver, Gold, Platinum) |
+| bema_account_type | String | Account type (subscriber, premium, admin) |
+| bema_email_verified | Boolean | Email verification status |
+| bema_phone_verified | Boolean | Phone verification status |
+| bema_fraud_flag | Boolean | Fraud detection flag |
+| bema_device_id | String | Unique device identifier |
+| bema_last_signin | Timestamp | Last signin timestamp |
+| bema_last_signout | Timestamp | Last signout timestamp |
+| bema_otp_code | String (SHA256 Hash) | Hashed OTP code for all verification purposes |
+| bema_otp_expiry | Timestamp | OTP expiration timestamp |
+| bema_otp_purpose | String | Purpose of OTP (email_verification, password_reset) |
+| bema_google_id | String (Optional) | Google user ID for social login |
+| bema_facebook_id | String (Optional) | Facebook user ID for social login |
+| bema_twitter_id | String (Optional) | Twitter user ID for social login |
+
+## Authentication Flow
+
+### 1. Email Signup
+1. User submits email, password, and profile information
 2. System validates input and checks for existing email
-3. WordPress user account is created
-4. Custom user meta fields are populated
-5. OTP code is generated and stored (hashed)
-6. User receives OTP via email (implementation placeholder)
-7. User submits OTP for verification (using email instead of user ID)
-8. Email verification status is updated
-9. JWT token is generated and returned
+3. User account is created with default values
+4. OTP is generated and sent for email verification
+5. User verifies OTP to complete registration
 
-#### Social Signup Process
-1. User authenticates with social provider (frontend)
-2. Frontend receives user data from social provider
-3. User data is sent to social login endpoint
-4. System checks for existing user with social ID
-5. If not found, checks for existing user with email
-6. If no existing user, creates new WordPress user
-7. Links social account to user profile
-8. Sets appropriate user meta fields
-9. Marks user as email verified (social provider verification)
-10. Generates and returns JWT token
+### 2. Social Login
+1. User authenticates with Google, Facebook, or Twitter
+2. System checks for existing account with provider ID
+3. If not found, checks for existing account with email
+4. If neither exists, creates new account
+5. Returns JWT token for authenticated access
 
-### 3. User Meta Fields
+### 3. Traditional Login
+1. User provides username/email and password
+2. System authenticates credentials
+3. If valid, generates and returns JWT token
 
-All required custom user meta fields have been implemented:
+### 4. Token Management
+1. JWT tokens are generated with 7-day expiration
+2. Tokens contain user ID, login, and email
+3. Tokens are validated on protected endpoints
+4. Tokens can be invalidated through signout
+5. Invalidated tokens are persisted across requests
 
-#### Required Fields
-- `bema_first_name`: User's first name
-- `bema_last_name`: User's last name
-- `bema_country`: User's country
+### 5. Password Reset
+1. User requests password reset with email
+2. System generates OTP and sends to user
+3. User verifies OTP to receive temporary reset token
+4. User provides new password with reset token
+5. System updates password and invalidates reset token
 
-#### Optional Fields
-- `bema_phone_number`: Encrypted phone number
-- `bema_city`: User's city
-- `bema_referred_by`: Referral code
+## Security Features
 
-#### System Fields
-- `bema_device_id`: Auto-generated for fraud detection
-- `bema_tier_level`: User tier (Opt-In, Gold, VIP)
-- `bema_account_type`: Account type (subscriber, admin)
-- `bema_last_signin`: Timestamp of last signin
+### JWT Token Security
+- Tokens are signed with HMAC-SHA256 using a secret key
+- Tokens expire after 7 days
+- Tokens include issued at, not before, and expiration claims
+- Token validation includes signature verification and expiration check
 
-#### Social Login Fields
-- `bema_google_id`: Google OAuth ID
-- `bema_facebook_id`: Facebook OAuth ID
-- `bema_x_id`: Twitter OAuth ID
+### OTP Security
+- OTP codes are 6-digit random numbers
+- OTP codes expire after 10 minutes
+- OTP codes are SHA256 hashed before storage
+- Single OTP field reused for all verification purposes with purpose tracking
 
-#### Security Fields
-- `bema_fraud_flag`: Suspicious activity flag
+### Data Protection
+- Phone numbers are encrypted before storage
+- OTP codes and tokens are never logged in full
+- Input validation prevents injection attacks
+- Rate limiting should be implemented at the server level
 
-#### Verification Fields
-- `bema_email_verified`: Email verification status
-- `bema_phone_verified`: Phone verification status
-- `bema_otp_code`: Hashed OTP code
-- `bema_otp_expiry`: OTP expiration timestamp (10 minutes)
+### Authentication Logging
+- All authentication events are logged
+- Failed attempts are logged with details
+- Successful logins and signouts are logged
+- OTP generation and verification are logged
+- Token validation attempts are logged
 
-### 4. Security Features
+## API Endpoints
 
-#### JWT Authentication
-- HS256 algorithm for token signing
-- 7-day token expiration
-- Secure token validation
-- Token invalidation on signout
-- Comprehensive logging for security monitoring
-- Proper error handling
+### Authentication Endpoints
+- `POST /wp-json/bema-hub/v1/auth/signup` - User registration
+- `POST /wp-json/bema-hub/v1/auth/verify-otp` - OTP verification
+- `POST /wp-json/bema-hub/v1/auth/signin` - User login
+- `POST /wp-json/bema-hub/v1/auth/social-login` - Social authentication
+- `POST /wp-json/bema-hub/v1/auth/signout` - User signout
+- `POST /wp-json/bema-hub/v1/auth/validate` - Token validation
+- `POST /wp-json/bema-hub/v1/auth/reset-password-request` - Password reset request
 
-#### Data Protection
-- Phone numbers encrypted (base64 placeholder)
-- OTP codes hashed before storage
-- Input validation and sanitization
-- HTTPS-only communication recommended
-- Security events logged for monitoring
+### Protected Endpoints
+- `GET /wp-json/bema-hub/v1/profile` - User profile information
 
-#### Account Security
-- Unique username generation
-- Email existence checking
-- Password strength (handled by WordPress)
-- Rate limiting considerations
+## Implementation Details
 
-### 5. Frontend Integration
+### Modular Controller Architecture
+The system uses a modular controller-based approach:
+- Each controller handles a specific domain of functionality
+- Controllers receive dependencies through constructor injection
+- Controllers are loosely coupled through the main REST API class
+- Route registration is centralized in the main REST API class
 
-#### Supported Authentication Methods
-- Traditional email/password login
-- Social login (Google, Facebook, Twitter)
-- Email verification flow
+### Token Invalidation
+- Tokens are invalidated during signout by adding them to a blacklist
+- The blacklist is persisted to the WordPress options table
+- On shutdown, the invalidated tokens are saved to ensure persistence
+- During token validation, the system checks against the invalidated tokens list
 
-#### Token Management
-- JWT token storage recommendations
-- Token expiration handling
-- Authenticated request patterns
-- Error handling strategies
+### Shared OTP Fields
+Instead of creating separate OTP fields for each use case:
+- Single OTP field (`bema_otp_code`) is used for all verification purposes
+- Purpose is tracked with `bema_otp_purpose` field
+- This prevents data duplication and simplifies management
+- Users can only have one active OTP at a time
 
-## Technical Implementation Details
+### Error Handling
+- All endpoints return appropriate HTTP status codes
+- Error responses follow WordPress REST API conventions
+- Detailed error information is logged for debugging
+- User-facing error messages do not expose sensitive information
 
-### File Structure
-```
-includes/
-  auth/
-    class-bema-hub-jwt-auth.php     # JWT authentication logic
-  rest/
-    class-bema-hub-rest-api.php     # REST API endpoints
-doc/
-  endpoint-auth-login.md            # Login endpoint documentation
-  endpoint-auth-validate.md         # Token validation documentation
-  endpoint-auth-signup.md           # Signup endpoint documentation
-  endpoint-auth-verify-otp.md       # OTP verification documentation
-  endpoint-auth-social-login.md     # Social login documentation
-  endpoint-profile.md               # Profile endpoint documentation
-  frontend-integration-guide.md     # Frontend integration guide
-  user-meta-fields.md               # User meta fields documentation
-  implementation-summary.md         # This document
-  README.md                         # Main documentation index
-```
-
-### Key Classes
-
-#### Bema_Hub_REST_API
-Handles all REST API endpoints for authentication:
-- `register_routes()`: Registers all authentication endpoints
-- `signup()`: Implements email signup with OTP generation
-- `verify_otp()`: Implements OTP verification and token generation (uses email instead of user ID)
-- `social_login()`: Implements social login for all providers
-- `signin()`: Implements traditional username/password login
-- `validate_token()`: Implements JWT token validation
-- `get_profile()`: Returns user profile information
-- `validate_jwt_permission()`: Validates JWT tokens for protected endpoints
-
-#### Bema_Hub_JWT_Auth
-Handles JWT token generation and validation:
-- `generate_token()`: Creates JWT tokens with user data
-- `validate_token()`: Validates JWT tokens and checks expiration
-- `authenticate_and_generate_token()`: Authenticates user and generates token
-- `encode_token()`: Encodes JWT tokens with HS256 algorithm
-- Helper methods for base64 URL encoding/decoding
-
-### WordPress Integration
-
-#### Hooks Used
-- `rest_api_init`: Registers REST API routes
-- WordPress authentication functions:
-  - `wp_create_user()`: Creates new WordPress users
-  - `wp_authenticate()`: Authenticates users
-  - `username_exists()`: Checks for existing usernames
-  - `email_exists()`: Checks for existing emails
-  - `get_user_by()`: Retrieves user data
-  - `get_users()`: Searches for users by meta fields
-  - `update_user_meta()`: Sets user meta fields
-  - `get_user_meta()`: Retrieves user meta fields
-  - `delete_user_meta()`: Removes user meta fields
-  - `wp_hash_password()`: Hashes OTP codes (deprecated for OTP)
-  - Custom OTP verification using SHA256 hashing
-
-#### Constants Required
-- `JWT_SECRET`: Defined in `wp-config.php` for JWT token signing
-
-## Usage Instructions
-
-### Backend Setup
-1. Ensure `JWT_SECRET` is defined in `wp-config.php`
-2. Activate the Bema Hub plugin
-3. All endpoints are automatically available at `/wp-json/bema-hub/v1/`
-
-### Frontend Integration
-1. Refer to `frontend-integration-guide.md` for implementation patterns
-2. Use the appropriate endpoint for each authentication method:
-   - Email signup: POST to `/auth/signup`
-   - OTP verification: POST to `/auth/verify-otp` (now uses email instead of user ID)
-   - Traditional login: POST to `/auth/signin`
-   - Social login: POST to `/auth/social-login`
-   - Signout: POST to `/auth/signout`
-   - Token validation: POST to `/auth/validate`
-   - Profile access: GET to `/profile` (with Authorization header)
-
-### Testing
-1. Use tools like Postman or cURL to test endpoints
-2. Verify all error conditions are handled properly
-3. Test edge cases like expired OTP codes (10-minute expiration)
-4. Validate JWT token generation and validation
-5. Confirm user meta fields are correctly set
+### Performance Considerations
+- Database queries are optimized with appropriate indexes
+- Caching should be implemented for frequently accessed data
+- Heavy operations are avoided in the request lifecycle
+- Logging is performed efficiently to minimize performance impact
 
 ## Future Enhancements
 
-### Security Improvements
-- Implement proper encryption for sensitive data
-- Add rate limiting for authentication endpoints
-- Implement refresh tokens for better security
+### Scalability Improvements
+- Implement database indexing for frequently queried fields
+- Add caching layer for user metadata
+- Consider distributed token storage for high-traffic scenarios
+
+### Security Enhancements
+- Implement rate limiting for authentication endpoints
 - Add two-factor authentication support
+- Enhance encryption for sensitive data
+- Implement more sophisticated fraud detection
 
-### Feature Enhancements
-- Password reset functionality
-- Account deletion endpoints
-- Admin user management
-- Enhanced social login provider support
+### Feature Extensions
+- Add user profile picture upload
+- Implement account linking for multiple social providers
+- Add password strength requirements
+- Implement account recovery options
 
-### Performance Optimizations
-- Caching for frequently accessed user data
-- Database indexing for user meta fields
-- Asynchronous email sending for OTP codes
+## Testing
 
-## Conclusion
+### Unit Tests
+- Each controller method should have unit tests
+- JWT authentication functions should be tested
+- OTP generation and verification should be tested
+- Token validation and invalidation should be tested
 
-The Bema Hub plugin now provides a comprehensive authentication system that supports multiple login methods, proper user data management, and secure JWT-based authentication. The implementation follows WordPress best practices and provides extensive documentation for both backend and frontend developers.
+### Integration Tests
+- End-to-end authentication flows should be tested
+- Social login integrations should be tested
+- Password reset flows should be tested
+- Token persistence should be tested
+
+### Security Testing
+- Penetration testing should be performed
+- Input validation should be tested with malicious data
+- Token security should be verified
+- OTP security should be verified
+
+## Deployment
+
+### Requirements
+- WordPress 5.6 or higher
+- PHP 7.4 or higher
+- MySQL 5.6 or higher
+- HTTPS enabled for production
+
+### Configuration
+- `JWT_SECRET` constant must be defined in wp-config.php
+- Plugin must be activated through WordPress admin
+- Database tables are created automatically on activation
+
+### Maintenance
+- Logs are automatically cleaned up after 30 days
+- Database should be monitored for performance
+- Security updates should be applied regularly
+- Backups should be performed regularly

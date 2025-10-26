@@ -1,13 +1,10 @@
-# User Signup Endpoint
+# Signup Endpoint
 
-## Endpoint Details
-- **URL**: `/wp-json/bema-hub/v1/auth/signup`
-- **Method**: `POST`
-- **Authentication**: None (Public endpoint)
-- **Permissions**: Anyone can register
+## Endpoint
+`POST /wp-json/bema-hub/v1/auth/signup`
 
 ## Description
-This endpoint registers new users in the system. It validates the provided information, creates a new WordPress user, and sends an OTP code for email verification.
+Register a new user account with email verification. This endpoint creates a new user in the WordPress system and sends an OTP code for email verification.
 
 ## Request Body
 ```json
@@ -18,26 +15,27 @@ This endpoint registers new users in the system. It validates the provided infor
   "last_name": "string",
   "phone_number": "string",
   "country": "string",
-  "city": "string",
+  "state": "string",
   "referred_by": "string"
 }
 ```
 
-### Parameters
+## Parameters
+
 | Parameter     | Type   | Required | Description                          |
 |---------------|--------|----------|--------------------------------------|
 | email         | string | Yes      | User's email address                 |
-| password      | string | Yes      | Account password                     |
+| password      | string | Yes      | User's password                      |
 | first_name    | string | Yes      | User's first name                    |
 | last_name     | string | Yes      | User's last name                     |
-| phone_number  | string | No       | User's phone number (encrypted)      |
+| phone_number  | string | No       | User's phone number                  |
 | country       | string | Yes      | User's country                       |
-| city          | string | No       | User's city                          |
-| referred_by   | string | No       | Referral code                        |
+| state         | string | No       | User's state                         |
+| referred_by   | string | No       | Referral code or user ID             |
 
-## Success Response
+## Response Format
 
-### Code: 200 OK
+### Success Response (200)
 ```json
 {
   "success": true,
@@ -46,22 +44,20 @@ This endpoint registers new users in the system. It validates the provided infor
 }
 ```
 
-## Error Responses
+### Error Responses
 
-### Missing Required Fields
-**Code**: 400 Bad Request
+#### Missing Required Fields (400)
 ```json
 {
   "code": "missing_fields",
-  "message": "Email, password, first name, last name, and country are required",
+  "message": "Email, password, first_name, last_name, and country are required",
   "data": {
     "status": 400
   }
 }
 ```
 
-### Invalid Email Format
-**Code**: 400 Bad Request
+#### Invalid Email Format (400)
 ```json
 {
   "code": "invalid_email",
@@ -72,8 +68,7 @@ This endpoint registers new users in the system. It validates the provided infor
 }
 ```
 
-### Email Already Exists
-**Code**: 400 Bad Request
+#### Email Already Exists (400)
 ```json
 {
   "code": "email_exists",
@@ -84,8 +79,7 @@ This endpoint registers new users in the system. It validates the provided infor
 }
 ```
 
-### User Creation Failed
-**Code**: 500 Internal Server Error
+#### User Creation Failed (500)
 ```json
 {
   "code": "user_creation_failed",
@@ -96,45 +90,32 @@ This endpoint registers new users in the system. It validates the provided infor
 }
 ```
 
-## Usage Examples
+## Example Usage
 
-### cURL
-```bash
-curl -X POST \
-  https://yoursite.com/wp-json/bema-hub/v1/auth/signup \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "email": "user@example.com",
-    "password": "securepassword123",
-    "first_name": "John",
-    "last_name": "Doe",
-    "phone_number": "+1234567890",
-    "country": "United States",
-    "city": "New York"
-  }'
-```
-
-### JavaScript (Fetch API)
+### JavaScript Fetch API
 ```javascript
+const signupData = {
+  email: 'user@example.com',
+  password: 'securepassword123',
+  first_name: 'John',
+  last_name: 'Doe',
+  phone_number: '+1234567890',
+  country: 'United States',
+  state: 'New York',
+  referred_by: 'R-SOS2026-123'
+};
+
 fetch('/wp-json/bema-hub/v1/auth/signup', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
   },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'securepassword123',
-    first_name: 'John',
-    last_name: 'Doe',
-    phone_number: '+1234567890',
-    country: 'United States',
-    city: 'New York'
-  }),
+  body: JSON.stringify(signupData),
 })
 .then(response => response.json())
 .then(data => {
-  if (response.ok) {
-    console.log('Account created successfully');
+  if (data.success) {
+    console.log('Signup successful:', data.message);
     // Save email for OTP verification
     localStorage.setItem('pendingUserEmail', data.user_email);
   } else {
@@ -142,33 +123,65 @@ fetch('/wp-json/bema-hub/v1/auth/signup', {
   }
 })
 .catch(error => {
-  console.error('Error:', error);
+  console.error('Signup error:', error);
 });
+```
+
+### cURL
+```bash
+curl -X POST \
+  https://yoursite.com/wp-json/bema-hub/v1/auth/signup \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "email": "user@example.com",
+  "password": "securepassword123",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone_number": "+1234567890",
+  "country": "United States",
+  "state": "New York",
+  "referred_by": "R-SOS2026-123"
+}'
 ```
 
 ## Implementation Details
 
-This endpoint is implemented in the `Bema_Hub_REST_API` class in the `signup` method. The process involves:
+### User Data Storage
+- User accounts are created in the standard WordPress `wp_users` table
+- Custom user metadata is stored in the `wp_usermeta` table with the `bema_` prefix
+- Phone numbers are encrypted before storage for security
+- All required fields are validated before processing
 
-1. Validating that all required parameters are provided
-2. Validating the email format
-3. Checking if the email already exists
-4. Generating a unique username from the email
-5. Creating a new WordPress user with `wp_create_user`
-6. Setting user meta fields with the provided information
-7. Encrypting sensitive data like phone numbers
-8. Generating a device ID for fraud detection
-9. Creating an OTP code for email verification (10-minute expiration)
-10. Sending the OTP code to the user's email (in a real implementation)
+### Verification Process
+1. User submits signup data
+2. System validates input and checks for existing email
+3. User account is created with default values:
+   - `bema_tier_level`: "Opt-In"
+   - `bema_account_type`: "subscriber"
+   - `bema_email_verified`: false
+   - `bema_phone_verified`: false
+   - `bema_fraud_flag`: false
+4. Unique device ID is generated and stored
+5. OTP is generated and sent for email verification
+6. User must verify OTP to complete registration
 
-## Security Considerations
+### Security Considerations
+- Passwords are hashed using WordPress's secure hashing algorithm
+- Phone numbers are encrypted before storage
+- OTP codes expire after 10 minutes
+- OTP codes are SHA256 hashed before storage
+- All authentication events are logged for security monitoring
+- Input validation prevents injection attacks
+- Rate limiting should be implemented at the server level
 
-1. All communication must use HTTPS encryption
-2. Passwords are never stored in logs or responses
-3. Phone numbers are encrypted before storage
-4. Input validation ensures proper data types
-5. Usernames are automatically generated to prevent conflicts
-6. OTP codes are hashed before storage
-7. Device IDs are generated for fraud detection
-8. Rate limiting should be implemented to prevent abuse
-9. OTP codes expire after 10 minutes for enhanced security
+### Error Handling
+- All required fields are validated
+- Email format is validated
+- Existing email addresses are checked
+- Database errors are handled gracefully
+- Detailed error information is logged for debugging
+- User-facing error messages do not expose sensitive information
+
+## Related Endpoints
+- [OTP Verification](endpoint-auth-verify-otp.md) - Verify the OTP sent during signup
+- [Login](endpoint-auth-login.md) - Login after email verification

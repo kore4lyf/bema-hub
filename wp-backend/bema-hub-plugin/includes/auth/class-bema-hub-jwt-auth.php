@@ -29,7 +29,7 @@ class Bema_Hub_JWT_Auth {
     public function __construct() {
         // Initialize logger
         if (class_exists('Bema_Hub\Bema_Hub_Logger')) {
-            $this->logger = Bema_Hub_Logger::create('jwt-auth');
+            $this->logger = \Bema_Hub\Bema_Hub_Logger::create('jwt-auth');
         }
     }
 
@@ -85,12 +85,22 @@ class Bema_Hub_JWT_Auth {
         if ($this->logger) {
             $this->logger->info('Generating JWT token for user', [
                 'user_id' => $user_id,
-                'user_login' => $user->user_login
+                'user_login' => $user->user_login,
+                'user_email' => $user->user_email
             ]);
         }
 
         // Generate and return the token
-        return $this->encode_token($payload);
+        $token = $this->encode_token($payload);
+        
+        if ($this->logger && !\is_wp_error($token)) {
+            $this->logger->info('JWT token generated successfully', [
+                'user_id' => $user_id,
+                'token_preview' => substr($token, 0, 10) . '...'
+            ]);
+        }
+        
+        return $token;
     }
 
     /**
@@ -103,6 +113,9 @@ class Bema_Hub_JWT_Auth {
     private function encode_token($payload) {
         // Check if JWT_SECRET is defined
         if (!defined('JWT_SECRET')) {
+            if ($this->logger) {
+                $this->logger->error('Failed to encode token: JWT_SECRET not defined');
+            }
             return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
         }
 
@@ -125,12 +138,20 @@ class Bema_Hub_JWT_Auth {
     public function validate_token($token) {
         // Check if JWT_SECRET is defined
         if (!defined('JWT_SECRET')) {
+            if ($this->logger) {
+                $this->logger->error('Failed to validate token: JWT_SECRET not defined');
+            }
             return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
         }
 
         // Split the token
         $token_parts = explode('.', $token);
         if (count($token_parts) != 3) {
+            if ($this->logger) {
+                $this->logger->warning('JWT token validation failed: Invalid token format', [
+                    'token_preview' => substr($token, 0, 10) . '...'
+                ]);
+            }
             return new \WP_Error('invalid_token', 'Invalid token format', ['status' => 401]);
         }
 
@@ -142,7 +163,9 @@ class Bema_Hub_JWT_Auth {
 
         if (!\hash_equals($expected_signature_encoded, $signature_encoded)) {
             if ($this->logger) {
-                $this->logger->warning('JWT token validation failed: Invalid signature');
+                $this->logger->warning('JWT token validation failed: Invalid signature', [
+                    'token_preview' => substr($token, 0, 10) . '...'
+                ]);
             }
             return new \WP_Error('invalid_token', 'Invalid token signature', ['status' => 401]);
         }
@@ -154,7 +177,8 @@ class Bema_Hub_JWT_Auth {
         if (\json_last_error() !== JSON_ERROR_NONE) {
             if ($this->logger) {
                 $this->logger->error('JWT token validation failed: Invalid payload JSON', [
-                    'error' => \json_last_error_msg()
+                    'error' => \json_last_error_msg(),
+                    'token_preview' => substr($token, 0, 10) . '...'
                 ]);
             }
             return new \WP_Error('invalid_token', 'Invalid token payload', ['status' => 401]);
@@ -165,7 +189,8 @@ class Bema_Hub_JWT_Auth {
             if ($this->logger) {
                 $this->logger->info('JWT token validation failed: Token expired', [
                     'exp' => $payload['exp'],
-                    'current_time' => \time()
+                    'current_time' => \time(),
+                    'user_id' => $payload['data']['user_id'] ?? 'unknown'
                 ]);
             }
             return new \WP_Error('token_expired', 'Token has expired', ['status' => 401]);
@@ -174,7 +199,9 @@ class Bema_Hub_JWT_Auth {
         // Log successful validation
         if ($this->logger) {
             $this->logger->info('JWT token validated successfully', [
-                'user_id' => $payload['data']['user_id'] ?? 'unknown'
+                'user_id' => $payload['data']['user_id'] ?? 'unknown',
+                'user_email' => $payload['data']['user_email'] ?? 'unknown',
+                'token_preview' => substr($token, 0, 10) . '...'
             ]);
         }
 
@@ -190,6 +217,13 @@ class Bema_Hub_JWT_Auth {
      * @return array|WP_Error The token and user data or WP_Error on failure
      */
     public function authenticate_and_generate_token($username_or_email, $password) {
+        // Log authentication attempt
+        if ($this->logger) {
+            $this->logger->info('Authentication attempt', [
+                'username_or_email' => $username_or_email
+            ]);
+        }
+        
         // Authenticate user
         $user = \wp_authenticate($username_or_email, $password);
         
@@ -208,7 +242,25 @@ class Bema_Hub_JWT_Auth {
         $token = $this->generate_token($user->ID);
         
         if (\is_wp_error($token)) {
+            if ($this->logger) {
+                $this->logger->error('Token generation failed after successful authentication', [
+                    'user_id' => $user->ID,
+                    'user_email' => $user->user_email,
+                    'error_code' => $token->get_error_code(),
+                    'error_message' => $token->get_error_message()
+                ]);
+            }
             return $token;
+        }
+
+        // Log successful authentication and token generation
+        if ($this->logger) {
+            $this->logger->info('Authentication and token generation successful', [
+                'user_id' => $user->ID,
+                'user_login' => $user->user_login,
+                'user_email' => $user->user_email,
+                'token_preview' => substr($token, 0, 10) . '...'
+            ]);
         }
 
         // Return token and user data

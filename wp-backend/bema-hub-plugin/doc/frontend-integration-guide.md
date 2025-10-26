@@ -16,6 +16,11 @@ This guide explains how to integrate the Bema Hub plugin API endpoints into your
     - [Facebook Login Example](#facebook-login-example)
     - [Twitter Login Example](#twitter-login-example)
   - [Traditional Login](#traditional-login)
+  - [User Signout](#user-signout)
+  - [Password Reset Flow](#password-reset-flow)
+    - [Step 1: Request Password Reset](#step-1-request-password-reset)
+    - [Step 2: Verify Reset OTP](#step-2-verify-reset-otp)
+    - [Step 3: Set New Password](#step-3-set-new-password)
   - [Making Authenticated Requests](#making-authenticated-requests)
   - [Token Management](#token-management)
   - [Error Handling](#error-handling)
@@ -73,7 +78,7 @@ const userData = {
   last_name: 'Doe',
   phone_number: '+1234567890',
   country: 'United States',
-  city: 'New York',
+  state: 'New York',
   referred_by: 'R-SOS2026-123'
 };
 
@@ -221,6 +226,49 @@ async function handleTwitterLogin(twitterUserData) {
 
 ## Traditional Login
 
+```javascript
+async function loginUser(credentials) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/signin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+    
+    // Save the token for authenticated requests
+    localStorage.setItem('authToken', data.token);
+    
+    return data;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+}
+
+// Usage
+const credentials = {
+  username: 'user@example.com', // Can be email or username
+  password: 'securepassword123'
+};
+
+loginUser(credentials)
+  .then(result => {
+    console.log('Login successful:', result);
+    // Redirect to dashboard or home page
+  })
+  .catch(error => {
+    console.error('Login failed:', error);
+  });
+```
+
 ## User Signout
 
 To sign out a user, make a POST request to the signout endpoint. This endpoint requires authentication with a valid JWT token.
@@ -270,51 +318,160 @@ signout()
   });
 ```
 
-The signout endpoint now implements JWT token invalidation by adding the token to a blacklist on the server. This prevents the token from being used for further requests. The client-side token removal ensures the token is also cleared from the user's browser.
+The signout endpoint now implements JWT token invalidation by adding the token to a blacklist on the server. This prevents the token from being used for further requests. The client-side token removal ensures the token is also cleared from the user's browser. The invalidated tokens are persisted across requests to ensure security.
 
+## Password Reset Flow
+
+Users can reset their passwords using the three-step password reset process:
+
+### Step 1: Request Password Reset
 
 ```javascript
-async function loginUser(credentials) {
+async function requestPasswordReset(email) {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/signin`, {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password-request`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify({ email }),
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+      throw new Error(data.message || 'Password reset request failed');
     }
-    
-    // Save the token for authenticated requests
-    localStorage.setItem('authToken', data.token);
     
     return data;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Password reset request error:', error);
     throw error;
   }
 }
 
 // Usage
-const credentials = {
-  username: 'user@example.com', // Can be email or username
-  password: 'securepassword123'
-};
+const email = 'user@example.com';
 
-loginUser(credentials)
+requestPasswordReset(email)
   .then(result => {
-    console.log('Login successful:', result);
-    // Redirect to dashboard or home page
+    console.log(result.message);
+    // Save email for OTP verification
+    localStorage.setItem('resetUserEmail', email);
+    // Show OTP input form
   })
   .catch(error => {
-    console.error('Login failed:', error);
+    console.error('Password reset request failed:', error);
   });
 ```
+
+### Step 2: Verify Reset OTP
+
+```javascript
+async function verifyResetOTP(email, otpCode) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        otp_code: otpCode
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'OTP verification failed');
+    }
+    
+    // Check if this is for password reset
+    if (data.reset_token) {
+      // Save the reset token for password update
+      localStorage.setItem('resetToken', data.reset_token);
+      // Show new password form
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Reset OTP verification error:', error);
+    throw error;
+  }
+}
+
+// Usage
+const email = localStorage.getItem('resetUserEmail');
+const otpCode = '123456'; // From user input
+
+verifyResetOTP(email, otpCode)
+  .then(result => {
+    console.log(result.message);
+    // Show new password form if reset_token is present
+    if (result.reset_token) {
+      // Proceed to password reset form
+    }
+  })
+  .catch(error => {
+    console.error('Reset OTP verification failed:', error);
+  });
+```
+
+### Step 3: Set New Password
+
+```javascript
+async function setNewPassword(resetToken, newPassword) {
+  try {
+    // For security, we need to implement a new endpoint or use an existing one
+    // Since we don't have a dedicated password reset endpoint in the current implementation,
+    // we would need to add one. For now, this is a placeholder for where that endpoint would be.
+    
+    // This would be a separate endpoint that accepts the reset token and new password
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reset_token: resetToken,
+        new_password: newPassword
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Password reset failed');
+    }
+    
+    // Clear reset data
+    localStorage.removeItem('resetToken');
+    localStorage.removeItem('resetUserEmail');
+    
+    return data;
+  } catch (error) {
+    console.error('Password reset error:', error);
+    throw error;
+  }
+}
+
+// Usage
+const resetToken = localStorage.getItem('resetToken');
+const newPassword = 'newSecurePassword123';
+
+setNewPassword(resetToken, newPassword)
+  .then(result => {
+    console.log(result.message);
+    // Redirect to login page
+    window.location.href = '/login';
+  })
+  .catch(error => {
+    console.error('Password reset failed:', error);
+  });
+```
+
+Note: The current implementation does not include a dedicated endpoint for setting a new password with the reset token. This would need to be implemented as a new endpoint that validates the reset token and updates the user's password.
 
 ## Making Authenticated Requests
 
@@ -550,8 +707,16 @@ async function login(credentials) {
 
 6. **Social Login**: Handle cases where users revoke social app permissions.
 
-7. **Logging**: All authentication events are logged for security monitoring (on the backend), including signout events and token validation attempts.
+7. **Logging**: All authentication events are logged for security monitoring (on the backend), including signout events, token validation attempts, OTP verification attempts, and password reset events.
 
 8. **Signout Handling**: Call the signout endpoint to invalidate the token on the server and clear tokens from local storage. Redirect users appropriately after signout.
+
+9. **Password Reset**: Implement the full password reset flow with proper validation and user feedback.
+
+10. **Shared OTP System**: The same OTP verification endpoint is used for both email verification and password reset, with the system automatically determining the purpose.
+
+11. **Modular Architecture**: The backend follows a modular controller-based architecture for better maintainability and scalability.
+
+12. **Token Persistence**: Invalidated tokens are persisted across requests to ensure security.
 
 This guide provides a comprehensive foundation for integrating the Bema Hub plugin API into your frontend application. Adjust the implementation details based on your specific framework and requirements.
