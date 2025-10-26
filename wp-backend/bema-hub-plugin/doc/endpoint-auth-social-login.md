@@ -4,7 +4,7 @@
 `POST /wp-json/bema-hub/v1/auth/social-login`
 
 ## Description
-Authenticate users through social providers (Google, Facebook, Twitter). This endpoint handles both new user registration and existing user login through social authentication.
+Authenticate users through social providers (Google, Facebook, Twitter). This endpoint handles both new user registration and existing user login through social authentication. Includes user's avatar URL from WordPress's built-in avatar system.
 
 ## Request Body
 ```json
@@ -33,9 +33,9 @@ Authenticate users through social providers (Google, Facebook, Twitter). This en
 | country       | string | No       | User's country                       |
 | state         | string | No       | User's state                         |
 
-## Response Format
+## Success Response
 
-### Success Response (200)
+### Code: 200 OK
 ```json
 {
   "success": true,
@@ -43,13 +43,17 @@ Authenticate users through social providers (Google, Facebook, Twitter). This en
   "user_id": 123,
   "user_login": "user_example_com",
   "user_email": "user@example.com",
-  "user_display_name": "John Doe"
+  "user_display_name": "John Doe",
+  "first_name": "John",
+  "last_name": "Doe",
+  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
 }
 ```
 
-### Error Responses
+## Error Responses
 
-#### Missing Required Fields (400)
+### Missing Required Fields
+**Code**: 400 Bad Request
 ```json
 {
   "code": "missing_fields",
@@ -60,7 +64,8 @@ Authenticate users through social providers (Google, Facebook, Twitter). This en
 }
 ```
 
-#### Invalid Provider (400)
+### Invalid Provider
+**Code**: 400 Bad Request
 ```json
 {
   "code": "invalid_provider",
@@ -71,7 +76,8 @@ Authenticate users through social providers (Google, Facebook, Twitter). This en
 }
 ```
 
-#### User Creation Failed (500)
+### User Creation Failed
+**Code**: 500 Internal Server Error
 ```json
 {
   "code": "user_creation_failed",
@@ -82,7 +88,7 @@ Authenticate users through social providers (Google, Facebook, Twitter). This en
 }
 ```
 
-## Example Usage
+## Usage Examples
 
 ### JavaScript Fetch API
 ```javascript
@@ -145,7 +151,7 @@ curl -X POST \
 4. System checks for existing account with provider ID
 5. If not found, checks for existing account with email
 6. If neither exists, creates new account
-7. Returns JWT token for authenticated access
+7. Returns JWT token for authenticated access with avatar URL
 
 ### Account Linking
 - If a user has an existing account with the same email, the social account is linked
@@ -167,15 +173,28 @@ When creating a new user through social login:
    - `bema_phone_verified`: true (if phone number provided)
    - `bema_fraud_flag`: false
 5. Unique device ID is generated and stored
+6. Avatar URL is included from WordPress's built-in avatar system
 
 ### Existing User Login
 When an existing user logs in through social authentication:
 1. System finds user by provider ID or email
 2. Updates last signin timestamp
 3. Links social account if not already linked
-4. Generates and returns JWT token
+4. Generates and returns JWT token with avatar URL
 
-### Security Considerations
+### User Data Included in Response
+The response includes comprehensive user information:
+- **success**: Boolean indicating successful authentication
+- **token**: JWT token for authenticated requests
+- **user_id**: WordPress user ID
+- **user_login**: WordPress username
+- **user_email**: User's email address
+- **user_display_name**: User's display name
+- **first_name**: User's first name (WordPress field)
+- **last_name**: User's last name (WordPress field)
+- **avatar_url**: URL to user's avatar from WordPress's `get_avatar` function
+
+## Security Considerations
 - Social provider IDs are stored securely in user meta
 - Email verification is bypassed for social login users
 - Phone numbers are encrypted before storage
@@ -183,13 +202,22 @@ When an existing user logs in through social authentication:
 - Input validation prevents injection attacks
 - Rate limiting should be implemented at the server level
 
-### Error Handling
+## Error Handling
 - All required fields are validated
 - Provider is validated against allowed providers
 - Database errors are handled gracefully
 - Detailed error information is logged for debugging
 - User-facing error messages do not expose sensitive information
 
+## Avatar Information
+
+The response includes an `avatar_url` field that contains the URL to the user's avatar. This is generated using WordPress's built-in `get_avatar()` function, which:
+- Uses Gravatar by default based on the user's email address
+- Falls back to a default avatar if no Gravatar is found
+- Returns an avatar sized at 96x96 pixels
+- Can be customized with themes and plugins
+
 ## Related Endpoints
 - [Login](endpoint-auth-login.md) - Traditional username/password login
 - [Signup](endpoint-auth-signup.md) - Email-based registration
+- [Validate Token](endpoint-auth-validate.md) - Token validation

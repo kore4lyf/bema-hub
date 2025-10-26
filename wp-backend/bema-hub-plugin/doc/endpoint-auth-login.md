@@ -7,7 +7,7 @@
 - **Permissions**: Authorized users with valid credentials
 
 ## Description
-This endpoint authenticates users with their username or email address and password, then returns a JWT token for subsequent authorized requests.
+This endpoint authenticates users with their username or email address and password, then returns a JWT token for subsequent authorized requests. Includes user's avatar URL from WordPress's built-in avatar system.
 
 ## Request Body
 ```json
@@ -20,8 +20,8 @@ This endpoint authenticates users with their username or email address and passw
 ### Parameters
 | Parameter | Type   | Required | Description                          |
 |-----------|--------|----------|--------------------------------------|
-| username  | string | Yes      | Username or email address     |
-| password  | string | Yes      | Account password                      |
+| username  | string | Yes      | Username or email address            |
+| password  | string | Yes      | Account password                     |
 
 ## Success Response
 
@@ -32,7 +32,10 @@ This endpoint authenticates users with their username or email address and passw
   "user_id": 1,
   "user_login": "admin",
   "user_email": "admin@example.com",
-  "user_display_name": "Administrator"
+  "user_display_name": "Administrator",
+  "first_name": "Admin",
+  "last_name": "User",
+  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
 }
 ```
 
@@ -116,15 +119,28 @@ fetch('/wp-json/bema-hub/v1/auth/signin', {
 
 ## Implementation Details
 
-This endpoint is implemented in the `Bema_Hub_REST_API` class in the `login` method. The authentication process involves:
+This endpoint is implemented in the `Bema_Hub_Auth_Controller` class in the `signin` method. The authentication process involves:
 
 1. Validating that both username and password are provided
 2. Validating that both parameters are strings
 3. Sanitizing the username parameter
 4. Authenticating the user using WordPress's `wp_authenticate` function
-5. If authentication is successful, generating a JWT token with user information
-6. Returning the token and user data in the response
-7. Logging the authentication attempt (success or failure)
+5. If authentication is successful:
+   - Update the user's last signin timestamp
+   - Generate a JWT token with user information including avatar URL
+   - Return the token and user data in the response
+6. Logging the authentication attempt (success or failure)
+
+### User Data Included in Response
+The response includes comprehensive user information:
+- **token**: JWT token for authenticated requests
+- **user_id**: WordPress user ID
+- **user_login**: WordPress username
+- **user_email**: User's email address
+- **user_display_name**: User's display name
+- **first_name**: User's first name (WordPress field)
+- **last_name**: User's last name (WordPress field)
+- **avatar_url**: URL to user's avatar from WordPress's `get_avatar` function
 
 ## Security Considerations
 
@@ -135,3 +151,18 @@ This endpoint is implemented in the `Bema_Hub_REST_API` class in the `login` met
 5. Rate limiting should be implemented to prevent brute force attacks
 6. Tokens should be stored securely in the client application
 7. Tokens expire after 7 days for enhanced security
+8. All authentication attempts are logged for security monitoring
+
+## Avatar Information
+
+The response includes an `avatar_url` field that contains the URL to the user's avatar. This is generated using WordPress's built-in `get_avatar()` function, which:
+- Uses Gravatar by default based on the user's email address
+- Falls back to a default avatar if no Gravatar is found
+- Returns an avatar sized at 96x96 pixels
+- Can be customized with themes and plugins
+
+## Related Endpoints
+- [Signup](endpoint-auth-signup.md) - User registration
+- [Social Login](endpoint-auth-social-login.md) - Social authentication
+- [Validate Token](endpoint-auth-validate.md) - Token validation
+- [Signout](endpoint-auth-signout.md) - User signout

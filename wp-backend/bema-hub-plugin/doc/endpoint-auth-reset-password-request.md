@@ -75,7 +75,7 @@ This endpoint implements the first step of the password reset process:
 3. For security reasons, returns the same response regardless of whether the email exists
 4. If the user exists, generates a 6-digit OTP code
 5. Hashes the OTP code using SHA256 before storing
-6. Stores the hashed OTP and expiration time (10 minutes) in user meta fields
+6. Stores the hashed OTP and expiration time (10 minutes) in user meta fields with purpose "password_reset"
 7. In a real implementation, sends the OTP code to the user's email
 8. Logs the event for security monitoring
 

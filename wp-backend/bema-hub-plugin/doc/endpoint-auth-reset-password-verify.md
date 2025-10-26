@@ -6,7 +6,7 @@ POST /wp-json/bema-hub/v1/auth/reset-password-verify
 ```
 
 ## Description
-Verifies the one-time password (OTP) code sent to the user's email during the password reset process. After successful verification, this endpoint returns a temporary reset token that can be used to set a new password.
+Verifies the one-time password (OTP) code sent to the user's email during the password reset process. No authentication is required. After successful verification, user should proceed to set a new password.
 
 ## Request Body
 ```json
@@ -33,8 +33,7 @@ Verifies the one-time password (OTP) code sent to the user's email during the pa
 ```json
 {
   "success": true,
-  "message": "Password reset code verified successfully",
-  "reset_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+  "message": "Password reset code verified successfully"
 }
 ```
 
@@ -133,21 +132,19 @@ This endpoint implements the second step of the password reset process:
 2. Validates the email format
 3. Retrieves the user by email
 4. Gets the stored hashed OTP and expiration time from user meta
-5. Checks if an OTP exists for this user
+5. Checks if an OTP exists for this user with purpose "password_reset"
 6. Checks if the OTP has expired (10-minute window)
 7. Verifies the provided OTP code against the stored hash using timing-safe comparison
 8. Clears the OTP data from user meta after successful verification
-9. Generates a temporary JWT token (valid for 1 hour) specifically for password reset
-10. Returns the reset token to be used in the final step
-11. Logs all events for security monitoring
+9. Returns success response
+10. Logs all events for security monitoring
 
 ### Security Considerations
 - OTP codes are verified using timing-safe comparison to prevent timing attacks
 - OTP codes expire after 10 minutes (as per existing OTP specification)
-- Temporary reset tokens expire after 1 hour
-- Reset tokens are purpose-specific (can only be used for password reset)
 - All verification attempts are logged for security monitoring
 - Failed attempts should be rate limited to prevent brute force attacks
+- No authentication is required as this is part of the password reset flow
 
 ## Example Usage
 
@@ -167,9 +164,8 @@ fetch('https://yoursite.com/wp-json/bema-hub/v1/auth/reset-password-verify', {
 .then(data => {
   if (data.success) {
     console.log(data.message);
-    // Save the reset_token for the next step
-    localStorage.setItem('resetToken', data.reset_token);
     // Proceed to password reset step
+    window.location.href = '/reset-password';
   }
 })
 .catch(error => {

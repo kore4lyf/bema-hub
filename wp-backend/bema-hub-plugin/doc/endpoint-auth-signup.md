@@ -4,7 +4,7 @@
 `POST /wp-json/bema-hub/v1/auth/signup`
 
 ## Description
-Register a new user account with email verification. This endpoint creates a new user in the WordPress system and sends an OTP code for email verification.
+Register a new user account with email verification. This endpoint creates a new user in the WordPress system and sends an OTP code for email verification. After successful verification, users should login with their credentials.
 
 ## Request Body
 ```json
@@ -31,7 +31,7 @@ Register a new user account with email verification. This endpoint creates a new
 | phone_number  | string | No       | User's phone number                  |
 | country       | string | Yes      | User's country                       |
 | state         | string | No       | User's state                         |
-| referred_by   | string | No       | Referral code or user ID             |
+| referred_by   | string | No       | Referral code or user ID (set only during signup) |
 
 ## Response Format
 
@@ -118,6 +118,7 @@ fetch('/wp-json/bema-hub/v1/auth/signup', {
     console.log('Signup successful:', data.message);
     // Save email for OTP verification
     localStorage.setItem('pendingUserEmail', data.user_email);
+    // After OTP verification, redirect to login page
   } else {
     console.error('Signup failed:', data.message);
   }
@@ -151,6 +152,7 @@ curl -X POST \
 - Custom user metadata is stored in the `wp_usermeta` table with the `bema_` prefix
 - Phone numbers are encrypted before storage for security
 - All required fields are validated before processing
+- `bema_referred_by` is only set during signup and cannot be changed later
 
 ### Verification Process
 1. User submits signup data
@@ -164,6 +166,7 @@ curl -X POST \
 4. Unique device ID is generated and stored
 5. OTP is generated and sent for email verification
 6. User must verify OTP to complete registration
+7. After OTP verification, user is redirected to login page
 
 ### Security Considerations
 - Passwords are hashed using WordPress's secure hashing algorithm

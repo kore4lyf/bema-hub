@@ -1,55 +1,45 @@
-# Frontend Integration Guide
+# RTK Query Frontend Patterns for Bema Hub
 
-This guide explains how to integrate the Bema Hub plugin API endpoints into your frontend application using Redux Toolkit RTK Query with `fetchBaseQuery`.
+This document specifically addresses the Redux Toolkit RTK Query patterns used in the frontend implementation for the Bema Hub plugin, as requested.
 
-## Table of Contents
+## Your Implementation Approach
 
-- [Frontend Integration Guide](#frontend-integration-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Understanding Your Redux Architecture](#understanding-your-redux-architecture)
-  - [RTK Query API Service Implementation](#rtk-query-api-service-implementation)
-  - [Store Configuration](#store-configuration)
-  - [Authentication Flow Implementation](#authentication-flow-implementation)
-    - [1. Email Signup with OTP Verification](#1-email-signup-with-otp-verification)
-    - [2. Traditional Login](#2-traditional-login)
-    - [3. Social Login](#3-social-login)
-    - [4. Password Reset Flow](#4-password-reset-flow)
-  - [Component Usage Patterns](#component-usage-patterns)
-  - [Caching Strategy](#caching-strategy)
-  - [Benefits of Your Approach](#benefits-of-your-approach)
-    - [1. Automatic Caching](#1-automatic-caching)
-    - [2. Optimistic Updates](#2-optimistic-updates)
-    - [3. Loading States](#3-loading-states)
-    - [4. Performance](#4-performance)
-    - [5. Mental Model Shift](#5-mental-model-shift)
+You're using a modern Redux pattern that separates concerns clearly:
 
-## Understanding Your Redux Architecture
-
-Your implementation follows a modern Redux pattern with clear separation of concerns:
-
-1. **Auth Slice**: Manages local application state (user, token, flags)
-2. **API Slices**: Handle all server communication and caching
-3. **No Manual Async Logic**: RTK Query manages all async operations automatically
-
+### 1. State Management Separation
 ```javascript
-// Key Conceptual Differences from Traditional Approaches
+// ✅ Your approach - Separation of concerns
+{
+  // Local state slices (managed by traditional reducers)
+  auth: {
+    user: { id, email, name },
+    token: "jwt_token",
+    isAuthenticated: true,
+    pendingUserEmail: null,
+    resetUserEmail: null,
+    resetToken: null
+  },
+  
+  // API slices (managed by RTK Query)
+  authApi: {
+    queries: {},
+    mutations: {},
+    provided: {},
+    subscriptions: {},
+    config: { ... }
+  }
+}
+```
 
-// ❌ Old Thinking: Manual async thunks with manual state management
-const login = createAsyncThunk('auth/login', async (credentials) => {
-  const response = await fetch('/api/login', {
-    method: 'POST',
-    body: JSON.stringify(credentials)
-  })
-  return response.json()
-})
-
-// ✅ Your Approach: Define API shape, let RTK Query handle everything
+### 2. API Service Definition
+```javascript
+// ✅ Your approach - Define API shape, let RTK Query handle everything
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/',
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token
+      const token = getState().auth.token  // Get token from auth slice
       if (token) headers.set('authorization', `Bearer ${token}`)
       return headers
     },
@@ -66,15 +56,34 @@ export const authApi = createApi({
 })
 ```
 
-## RTK Query API Service Implementation
-
-Here's how to implement the Bema Hub API endpoints using your RTK Query pattern:
-
+### 3. Store Configuration
 ```javascript
-// services/api.js
+// ✅ Your approach - Combine local reducers with API reducers
+export const store = configureStore({
+  reducer: {
+    // Local state slices
+    auth: authReducer,
+    ui: uiReducer,
+    location: locationReducer,
+
+    // API slices (auto-generated reducers)
+    [authApi.reducerPath]: authApi.reducer,
+    [locationApi.reducerPath]: locationApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware()
+      .concat(authApi.middleware)      // Handles caching/invalidation
+      .concat(locationApi.middleware), // Background refetching
+})
+```
+
+## Bema Hub API Integration Patterns
+
+### Auth API Service for Bema Hub
+```javascript
+// services/bemaHubApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
-// API base configuration
 export const bemaHubApi = createApi({
   reducerPath: 'bemaHubApi',
   baseQuery: fetchBaseQuery({
@@ -99,7 +108,7 @@ export const bemaHubApi = createApi({
       }),
     }),
 
-    // OTP Verification
+    // OTP Verification (shared for email verification and password reset)
     verifyOtp: builder.mutation({
       query: ({ email, otpCode }) => ({
         url: '/auth/verify-otp',
@@ -137,7 +146,7 @@ export const bemaHubApi = createApi({
       }),
     }),
 
-    // Password Reset Request
+    // Password Reset Flow
     requestPasswordReset: builder.mutation({
       query: ({ email }) => ({
         url: '/auth/reset-password-request',
@@ -176,13 +185,6 @@ export const bemaHubApi = createApi({
       query: () => '/profile',
       providesTags: ['Profile'],
     }),
-
-    // Countries List (for location data)
-    getCountries: builder.query({
-      query: () => '/countries',
-      keepUnusedDataFor: 3600, // Cache for 1 hour
-      providesTags: ['Location'],
-    }),
   }),
 })
 
@@ -197,77 +199,24 @@ export const {
   useVerifyResetOtpMutation,
   useSetNewPasswordMutation,
   useGetProfileQuery,
-  useGetCountriesQuery,
 } = bemaHubApi
 
 export default bemaHubApi
 ```
 
-## Store Configuration
+### Component Usage Patterns
 
-Configure your Redux store to include both your local state slices and API slices:
-
-```
-// store/index.js
-import { configureStore } from '@reduxjs/toolkit'
-import authReducer from './slices/authSlice'
-import uiReducer from './slices/uiSlice'
-import locationReducer from './slices/locationSlice'
-import { bemaHubApi } from '../services/api'
-
-export const store = configureStore({
-  reducer: {
-    // Local state slices
-    auth: authReducer,
-    ui: uiReducer,
-    location: locationReducer,
-
-    // API slices (auto-generated reducers)
-    [bemaHubApi.reducerPath]: bemaHubApi.reducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware()
-      .concat(bemaHubApi.middleware), // Handles caching/invalidation
-})
-
-// State Structure:
-{
-  // Local application state
-  auth: {
-    user: { id, email, name },
-    token: "jwt_token",
-    isAuthenticated: true,
-    pendingUserEmail: null,
-    resetUserEmail: null,
-    resetToken: null
-  },
-
-  // RTK Query managed state (automatic)
-  bemaHubApi: {
-    queries: {},
-    mutations: {},
-    provided: {},
-    subscriptions: {},
-    config: { ... }
-  }
-}
-```
-
-## Authentication Flow Implementation
-
-Here's how to implement the complete authentication flows using your approach:
-
-### 1. Email Signup with OTP Verification
-
-```
-// components/SignupFlow.jsx
+#### Registration Flow
+```javascript
+// components/RegistrationFlow.jsx
 import { useState } from 'react'
-import { useSignUpMutation, useVerifyOtpMutation } from '../services/api'
-import { useDispatch } from 'react-redux'
-import { setCredentials, setPendingEmail } from '../store/slices/authSlice'
+import { useSignUpMutation, useVerifyOtpMutation } from '../services/bemaHubApi'
+import { useDispatch, useSelector } from 'react-redux'
+import { setPendingEmail } from '../store/slices/authSlice'
 
-const SignupFlow = () => {
+const RegistrationFlow = () => {
   const dispatch = useDispatch()
+  const pendingEmail = useSelector(state => state.auth.pendingUserEmail)
   const [step, setStep] = useState('signup') // 'signup' | 'otp'
   
   // RTK Query mutations with automatic loading states
@@ -289,11 +238,8 @@ const SignupFlow = () => {
   const handleVerifyOtp = async ({ email, otpCode }) => {
     try {
       const result = await verifyOtp({ email, otpCode }).unwrap()
-      dispatch(setCredentials({ 
-        user: result.user, 
-        token: result.token 
-      }))
-      // Redirect to dashboard
+      // Handle successful verification (token will be in result)
+      // Update auth slice with token and user data
     } catch (err) {
       console.error('OTP verification failed:', err)
     }
@@ -310,6 +256,7 @@ const SignupFlow = () => {
       )}
       {step === 'otp' && (
         <OtpVerificationForm 
+          email={pendingEmail}
           onSubmit={handleVerifyOtp}
           loading={isVerifying}
           error={verifyError}
@@ -320,11 +267,10 @@ const SignupFlow = () => {
 }
 ```
 
-### 2. Traditional Login
-
-```
+#### Login Component
+```javascript
 // components/LoginForm.jsx
-import { useSignInMutation } from '../services/api'
+import { useSignInMutation } from '../services/bemaHubApi'
 import { useDispatch } from 'react-redux'
 import { setCredentials } from '../store/slices/authSlice'
 
@@ -354,76 +300,32 @@ const LoginForm = () => {
         password: data.get('password')
       })
     }}>
-      <input name="username" required />
-      <input name="password" type="password" required />
+      <input name="username" required placeholder="Username or Email" />
+      <input name="password" type="password" required placeholder="Password" />
       <button type="submit" disabled={isLoading}>
         {isLoading ? 'Logging in...' : 'Login'}
       </button>
-      {error && <div>Error: {error.data?.message}</div>}
+      {error && <div className="error">Error: {error.data?.message}</div>}
     </form>
   )
 }
 ```
 
-### 3. Social Login
-
-```
-// components/SocialLoginButtons.jsx
-import { useSocialLoginMutation } from '../services/api'
-import { useDispatch } from 'react-redux'
-import { setCredentials } from '../store/slices/authSlice'
-
-const SocialLoginButtons = () => {
-  const dispatch = useDispatch()
-  const [socialLogin, { isLoading, error }] = useSocialLoginMutation()
-
-  const handleSocialLogin = async (providerData) => {
-    try {
-      const result = await socialLogin(providerData).unwrap()
-      dispatch(setCredentials({ 
-        user: result.user, 
-        token: result.token 
-      }))
-      // Redirect to dashboard
-    } catch (err) {
-      console.error('Social login failed:', err)
-    }
-  }
-
-  return (
-    <div>
-      <button 
-        onClick={() => handleSocialLogin({ provider: 'google', /* ... */ })}
-        disabled={isLoading}
-      >
-        Sign in with Google
-      </button>
-      <button 
-        onClick={() => handleSocialLogin({ provider: 'facebook', /* ... */ })}
-        disabled={isLoading}
-      >
-        Sign in with Facebook
-      </button>
-    </div>
-  )
-}
-```
-
-### 4. Password Reset Flow
-
-```
+#### Password Reset Flow
+```javascript
 // components/PasswordResetFlow.jsx
 import { useState } from 'react'
 import { 
   useRequestPasswordResetMutation, 
   useVerifyResetOtpMutation,
   useSetNewPasswordMutation 
-} from '../services/api'
-import { useDispatch } from 'react-redux'
+} from '../services/bemaHubApi'
+import { useDispatch, useSelector } from 'react-redux'
 import { setResetEmail } from '../store/slices/authSlice'
 
 const PasswordResetFlow = () => {
   const dispatch = useDispatch()
+  const resetEmail = useSelector(state => state.auth.resetUserEmail)
   const [step, setStep] = useState('request') // 'request' | 'otp' | 'new-password'
   
   const [requestReset, { isLoading: requesting }] = useRequestPasswordResetMutation()
@@ -464,81 +366,43 @@ const PasswordResetFlow = () => {
         <ResetRequestForm onSubmit={handleRequestReset} loading={requesting} />
       )}
       {step === 'otp' && (
-        <ResetOtpForm onSubmit={handleVerifyOtp} loading={verifying} />
+        <ResetOtpForm 
+          email={resetEmail}
+          onSubmit={handleVerifyOtp} 
+          loading={verifying} 
+        />
       )}
       {step === 'new-password' && (
-        <NewPasswordForm onSubmit={handleSetNewPassword} loading={settingPassword} />
+        <NewPasswordForm 
+          email={resetEmail}
+          onSubmit={handleSetNewPassword} 
+          loading={settingPassword} 
+        />
       )}
     </div>
   )
 }
 ```
 
-## Component Usage Patterns
-
-Your RTK Query approach provides clean, predictable usage patterns:
-
-```
-// Automatic Loading States
-const [signIn, { isLoading, error, data }] = useSignInMutation()
-
-// Error Handling
-{error && <div>{error.data?.message || 'An error occurred'}</div>}
-
-// Request Deduplication
-// Multiple components using the same query will share one request
-
-// Caching
-// Queries automatically cache results based on your configuration
-
-// Background Updates
-// RTK Query can refetch data in background when needed
-```
-
-## Caching Strategy
-
-Your implementation leverages RTK Query's sophisticated caching:
-
-```
-export const locationApi = createApi({
-  keepUnusedDataFor: 300, // 5 minutes default
-  refetchOnFocus: false,   // No refetch on window focus
-  refetchOnReconnect: false, // No refetch on reconnect
-  endpoints: (builder) => ({
-    getCountries: builder.query({
-      query: () => 'countries',
-      keepUnusedDataFor: 3600, // Countries cached 1 hour
-      providesTags: ['Country'],
-    }),
-  }),
-})
-```
-
-Benefits:
-- Countries fetched once, cached for 1 hour
-- No duplicate requests
-- Background updates when needed
-- Efficient re-renders (only affected components update)
-
 ## Benefits of Your Approach
 
 ### 1. Automatic Caching
-- ✅ Countries fetched once, cached for 1 hour
-- ✅ No duplicate requests
-- ✅ Background updates when needed
+- Countries fetched once, cached for 1 hour
+- No duplicate requests
+- Background updates when needed
 
 ### 2. Optimistic Updates
-- ✅ Mutations can update cache immediately
-- ✅ Rollback on failure
+- Mutations can update cache immediately
+- Rollback on failure
 
 ### 3. Loading States
-- ✅ Per-mutation loading: isLoading, error, data
-- ✅ No manual loading management
+- Per-mutation loading: isLoading, error, data
+- No manual loading management
 
 ### 4. Performance
-- ✅ Reduced bundle size (no manual async logic)
-- ✅ Efficient re-renders (only affected components update)
-- ✅ Request deduplication
+- Reduced bundle size (no manual async logic)
+- Efficient re-renders (only affected components update)
+- Request deduplication
 
 ### 5. Mental Model Shift
 **Old Thinking**: "I need to fetch data and manage loading/error states"

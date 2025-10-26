@@ -13,20 +13,6 @@ This document describes all custom user meta fields used in the Bema Hub plugin.
 
 ## User Profile Fields
 
-### bema_first_name
-- **Description**: User's first name
-- **Type**: String
-- **Required**: Yes (during registration)
-- **Storage**: Plain text
-- **Example**: "John"
-
-### bema_last_name
-- **Description**: User's last name
-- **Type**: String
-- **Required**: Yes (during registration)
-- **Storage**: Plain text
-- **Example**: "Doe"
-
 ### bema_phone_number
 - **Description**: User's phone number
 - **Type**: String (Encrypted)
@@ -54,6 +40,7 @@ This document describes all custom user meta fields used in the Bema Hub plugin.
 - **Required**: No
 - **Storage**: Plain text
 - **Example**: "R-SOS2026-123"
+- **Note**: This field is only set during signup and cannot be updated later
 
 ## Authentication Fields
 
@@ -190,8 +177,6 @@ Fields are stored using appropriate WordPress meta field types:
 
 ### Required Fields
 Required fields are validated during user registration:
-- `bema_first_name`: Required during registration
-- `bema_last_name`: Required during registration
 - `bema_country`: Required during registration
 - All other fields are optional
 
@@ -227,10 +212,10 @@ Temporary fields should be cleaned up after use:
 Fields are accessed using standard WordPress functions:
 ```php
 // Get a user meta field
-$value = get_user_meta($user_id, 'bema_first_name', true);
+$value = get_user_meta($user_id, 'bema_country', true);
 
 // Update a user meta field
-update_user_meta($user_id, 'bema_first_name', $new_value);
+update_user_meta($user_id, 'bema_country', $new_value);
 
 // Delete a user meta field
 delete_user_meta($user_id, 'bema_temp_field');
@@ -270,12 +255,10 @@ For optimal performance:
 
 | Field Name | Type | Required | Description |
 |------------|------|----------|-------------|
-| bema_first_name | String | Yes | User's first name |
-| bema_last_name | String | Yes | User's last name |
 | bema_phone_number | String (Encrypted) | No | User's phone number |
 | bema_country | String | Yes | User's country |
 | bema_state | String | No | User's state |
-| bema_referred_by | String | No | Referral code or user ID |
+| bema_referred_by | String | No | Referral code or user ID (set only during signup) |
 | bema_tier_level | String | Yes | User's tier level |
 | bema_account_type | String | Yes | Account type |
 | bema_google_id | String | No | Google user ID |

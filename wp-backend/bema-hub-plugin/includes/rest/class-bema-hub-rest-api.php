@@ -195,6 +195,13 @@ class Bema_Hub_REST_API {
             'callback' => array($this->user_controller, 'get_profile'),
             'permission_callback' => array($this, 'validate_jwt_permission'),
         ));
+
+        // Register update profile route
+        \register_rest_route('bema-hub/v1', '/profile', array(
+            'methods' => 'PUT',
+            'callback' => array($this->user_controller, 'update_profile'),
+            'permission_callback' => array($this, 'validate_jwt_permission'),
+        ));
     }
 
     /**

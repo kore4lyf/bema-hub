@@ -9,13 +9,15 @@ This documentation provides detailed information about the REST API endpoints av
 3. [Authentication Flow](#authentication-flow)
 4. [Error Handling](#error-handling)
 5. [Security Considerations](#security-considerations)
+6. [Frontend Integration](#frontend-integration)
+7. [Implementation Documentation](#implementation-documentation)
 
 ## Authentication Endpoints
 
 These endpoints handle user authentication and token management.
 
 ### 1. Login
-- **Endpoint**: `/wp-json/bema-hub/v1/auth/login`
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/signin`
 - **Method**: `POST`
 - **Description**: Authenticate a user and generate a JWT token
 - **Details**: [endpoint-auth-login.md](endpoint-auth-login.md)
@@ -66,18 +68,25 @@ These endpoints require a valid JWT token in the Authorization header.
 - **Description**: Retrieve the authenticated user's profile information
 - **Details**: [endpoint-profile.md](endpoint-profile.md)
 
+### 2. Update User Profile
+- **Endpoint**: `/wp-json/bema-hub/v1/profile`
+- **Method**: `PUT`
+- **Description**: Update the authenticated user's profile information
+- **Details**: [endpoint-profile-update.md](endpoint-profile-update.md)
+
 ## Authentication Flow
 
 1. **User Registration** (Optional): New users register via the signup endpoint
 2. **Email Verification** (Email signup only): Users verify their email with the OTP verification endpoint
-3. **User Login**: Client sends username/email and password to the login endpoint
-4. **Token Generation**: Server validates credentials and returns a JWT token
-5. **Token Storage**: Client stores the token securely (e.g., in localStorage or HttpOnly cookies)
-6. **Authenticated Requests**: Client includes the token in the Authorization header for subsequent requests
-7. **Token Validation**: Server validates the token before processing protected endpoint requests
-8. **User Signout**: Client can sign out by calling the signout endpoint and clearing the token
-9. **Password Reset**: Users can reset forgotten passwords using the password reset flow
-10. **Token Refresh**: When token expires, client must re-authenticate
+3. **Redirect to Login**: After email verification, users are redirected to login
+4. **User Login**: Client sends username/email and password to the login endpoint
+5. **Token Generation**: Server validates credentials and returns a JWT token
+6. **Token Storage**: Client stores the token securely (e.g., in localStorage or HttpOnly cookies)
+7. **Authenticated Requests**: Client includes the token in the Authorization header for subsequent requests
+8. **Token Validation**: Server validates the token before processing protected endpoint requests
+9. **User Signout**: Client can sign out by calling the signout endpoint and clearing the token
+10. **Password Reset**: Users can reset forgotten passwords using the password reset flow
+11. **Token Refresh**: When token expires, client must re-authenticate
 
 ### Example Flow
 ```javascript
@@ -99,17 +108,26 @@ const signupResponse = await fetch('/wp-json/bema-hub/v1/auth/signup', {
 const verifyResponse = await fetch('/wp-json/bema-hub/v1/auth/verify-otp', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ user_id: 123, otp_code: '123456' })
+  body: JSON.stringify({ 
+    email: 'user@example.com', 
+    otp_code: '123456' 
+  })
 });
 
 const verifyData = await verifyResponse.json();
-const token = verifyData.token;
+if (verifyData.success) {
+  // Redirect to login after email verification
+  window.location.href = '/login';
+}
 
-// 3. Login (existing users)
-const loginResponse = await fetch('/wp-json/bema-hub/v1/auth/sigin', {
+// 3. Login (after verification or for existing users)
+const loginResponse = await fetch('/wp-json/bema-hub/v1/auth/signin', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username: 'user', password: 'pass' })
+  body: JSON.stringify({ 
+    username: 'user@example.com', 
+    password: 'securepassword' 
+  })
 });
 
 const loginData = await loginResponse.json();
@@ -124,8 +142,23 @@ const profileResponse = await fetch('/wp-json/bema-hub/v1/profile', {
 });
 
 const profileData = await profileResponse.json();
+console.log('User avatar URL:', profileData.avatar_url);
 
-// 6. Sign out
+// 6. Update profile
+const updateResponse = await fetch('/wp-json/bema-hub/v1/profile', {
+  method: 'PUT',
+  headers: { 
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    first_name: 'John',
+    last_name: 'Smith',
+    bema_state: 'California'
+  })
+});
+
+// 7. Sign out
 const signoutResponse = await fetch('/wp-json/bema-hub/v1/auth/signout', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${token}` }
@@ -134,6 +167,47 @@ const signoutResponse = await fetch('/wp-json/bema-hub/v1/auth/signout', {
 const signoutData = await signoutResponse.json();
 // Clear token from storage
 localStorage.removeItem('authToken');
+```
+
+## Password Reset Flow
+
+1. **Request Reset**: User requests password reset with email
+2. **Verify OTP**: User verifies OTP code sent to email
+3. **Set New Password**: User sets new password (no reset token needed)
+4. **Login**: User logs in with new password
+
+### Example Password Reset Flow
+```javascript
+// 1. Request password reset
+const resetRequestResponse = await fetch('/wp-json/bema-hub/v1/auth/reset-password-request', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'user@example.com' })
+});
+
+// 2. Verify reset OTP
+const verifyResetResponse = await fetch('/wp-json/bema-hub/v1/auth/reset-password-verify', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    email: 'user@example.com', 
+    otp_code: '123456' 
+  })
+});
+
+// 3. Set new password
+const resetPasswordResponse = await fetch('/wp-json/bema-hub/v1/auth/reset-password', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    email: 'user@example.com',
+    otp_code: '123456',
+    new_password: 'newSecurePassword123'
+  })
+});
+
+// 4. Redirect to login
+window.location.href = '/login';
 ```
 
 ## Error Handling
@@ -171,12 +245,60 @@ All endpoints return appropriate HTTP status codes and JSON error responses:
 9. **Data Encryption**: Sensitive data like phone numbers are encrypted before storage
 10. **Social Login**: Social login users are automatically verified
 11. **Signout**: Users can sign out to terminate their session with token invalidation
-12. **Password Reset**: Password reset uses OTP verification and temporary tokens
+12. **Password Reset**: Password reset uses OTP verification without reset tokens
 13. **Shared OTP Fields**: Single OTP field reused for all verification purposes (email, phone, password reset)
 14. **Modular Architecture**: Controllers separated by functionality for better maintainability
 15. **Logging**: All authentication events are logged for security monitoring
 16. **Audit Trail**: Comprehensive logging provides an audit trail for all authentication events
 17. **Token Persistence**: Invalidated tokens are persisted across requests for proper security
+
+## Frontend Integration
+
+The Bema Hub plugin API endpoints are designed to work seamlessly with modern frontend frameworks using Redux Toolkit RTK Query with `fetchBaseQuery`.
+
+### Redux RTK Query Implementation
+
+The frontend uses a modern Redux pattern with clear separation of concerns:
+1. **Auth Slice**: Manages local application state (user, token, flags)
+2. **API Slices**: Handle all server communication and caching
+3. **No Manual Async Logic**: RTK Query manages all async operations automatically
+
+### Benefits
+- **Automatic Caching**: Data is cached efficiently with configurable expiration
+- **Optimistic Updates**: Mutations can update cache immediately with rollback on failure
+- **Loading States**: Automatic loading states per query/mutation
+- **Request Deduplication**: Multiple components using the same query share one request
+- **Background Updates**: RTK Query can refetch data in background when needed
+
+For detailed implementation examples, see:
+- [frontend-integration-guide.md](frontend-integration-guide.md) - Complete integration guide
+- [redux-rtk-query-implementation.md](redux-rtk-query-implementation.md) - Specific RTK Query implementation details
+- [rtk-query-frontend-patterns.md](rtk-query-frontend-patterns.md) - Detailed patterns for your specific implementation
+
+## Implementation Documentation
+
+Comprehensive documentation about the plugin implementation:
+
+- [implementation-summary.md](implementation-summary.md) - Overall implementation summary
+- [final-implementation-summary.md](final-implementation-summary.md) - Final implementation overview
+- [architecture-improvements-summary.md](architecture-improvements-summary.md) - Architecture improvements
+- [logger-implementation-summary.md](logger-implementation-summary.md) - Logger implementation details
+- [user-meta-fields.md](user-meta-fields.md) - Complete reference of user meta fields
+- [city-to-state-changes-summary.md](city-to-state-changes-summary.md) - Changes from city to state
+- [endpoint-reference.md](endpoint-reference.md) - Quick reference for all endpoints with sample requests and responses
+
+### Endpoint Documentation
+- [endpoint-auth-login.md](endpoint-auth-login.md) - Login endpoint
+- [endpoint-auth-validate.md](endpoint-auth-validate.md) - Token validation endpoint
+- [endpoint-auth-signup.md](endpoint-auth-signup.md) - Signup endpoint
+- [endpoint-auth-verify-otp.md](endpoint-auth-verify-otp.md) - OTP verification endpoint
+- [endpoint-auth-social-login.md](endpoint-auth-social-login.md) - Social login endpoint
+- [endpoint-auth-signout.md](endpoint-auth-signout.md) - Signout endpoint
+- [endpoint-auth-reset-password-request.md](endpoint-auth-reset-password-request.md) - Password reset request endpoint
+- [endpoint-auth-reset-password-verify.md](endpoint-auth-reset-password-verify.md) - Password reset verification endpoint
+- [endpoint-auth-reset-password.md](endpoint-auth-reset-password.md) - Password reset endpoint
+- [endpoint-profile.md](endpoint-profile.md) - Get user profile endpoint
+- [endpoint-profile-update.md](endpoint-profile-update.md) - Update user profile endpoint
 
 ## Implementation Notes
 

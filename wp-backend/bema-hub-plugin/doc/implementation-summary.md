@@ -8,11 +8,11 @@ The Bema Hub plugin follows a modular, controller-based architecture that separa
 
 ### Main Components
 
-1. **Main Plugin Class** (`class-bema-hub.php`)
+1. **Main Plugin Class** ([class-bema-hub.php](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/includes/class-bema-hub.php))
    - Initializes the plugin and registers hooks
    - Loads dependencies and sets up the REST API
 
-2. **REST API Controller** (`class-bema-hub-rest-api.php`)
+2. **REST API Controller** ([class-bema-hub-rest-api.php](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/includes/rest/class-bema-hub-rest-api.php))
    - Registers all REST API endpoints
    - Coordinates between controllers
    - Handles token persistence
@@ -22,11 +22,11 @@ The Bema Hub plugin follows a modular, controller-based architecture that separa
    - **OTP Controller**: Manages OTP-related functionality (verification, password reset)
    - **User Controller**: Manages user operations (profile, signout, token validation)
 
-4. **JWT Authentication** (`class-bema-hub-jwt-auth.php`)
+4. **JWT Authentication** ([class-bema-hub-jwt-auth.php](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/includes/auth/class-bema-hub-jwt-auth.php))
    - Generates and validates JWT tokens
    - Handles user authentication
 
-5. **Logger** (`class-bema-logger.php`)
+5. **Logger** ([class-bema-logger.php](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/includes/logger/class-bema-logger.php))
    - Provides comprehensive logging for security monitoring
    - Stores logs securely with automatic cleanup
 
@@ -47,6 +47,8 @@ The Bema Hub plugin follows a modular, controller-based architecture that separa
 - `user_email` - User's email address
 - `user_registered` - Registration timestamp
 - `display_name` - User's full name (first_name last_name)
+- `first_name` - User's first name
+- `last_name` - User's last name
 
 ### Custom User Meta Fields (wp_usermeta)
 
@@ -54,12 +56,10 @@ All custom fields use the `bema_` prefix to avoid conflicts:
 
 | Field Name | Type | Description |
 |------------|------|-------------|
-| bema_first_name | String | User's first name |
-| bema_last_name | String | User's last name |
 | bema_phone_number | String (Encrypted) | User's phone number (encrypted) |
 | bema_country | String | User's country |
 | bema_state | String (Optional) | User's state |
-| bema_referred_by | String (Optional) | Referral code or user ID |
+| bema_referred_by | String (Optional) | Referral code or user ID (set only during signup) |
 | bema_tier_level | String | User's tier level (Opt-In, Bronze, Silver, Gold, Platinum) |
 | bema_account_type | String | Account type (subscriber, premium, admin) |
 | bema_email_verified | Boolean | Email verification status |
@@ -82,7 +82,7 @@ All custom fields use the `bema_` prefix to avoid conflicts:
 2. System validates input and checks for existing email
 3. User account is created with default values
 4. OTP is generated and sent for email verification
-5. User verifies OTP to complete registration
+5. User verifies OTP and is redirected to login
 
 ### 2. Social Login
 1. User authenticates with Google, Facebook, or Twitter
@@ -98,7 +98,7 @@ All custom fields use the `bema_` prefix to avoid conflicts:
 
 ### 4. Token Management
 1. JWT tokens are generated with 7-day expiration
-2. Tokens contain user ID, login, and email
+2. Tokens contain user ID, login, email, and avatar URL
 3. Tokens are validated on protected endpoints
 4. Tokens can be invalidated through signout
 5. Invalidated tokens are persisted across requests
@@ -106,9 +106,10 @@ All custom fields use the `bema_` prefix to avoid conflicts:
 ### 5. Password Reset
 1. User requests password reset with email
 2. System generates OTP and sends to user
-3. User verifies OTP to receive temporary reset token
-4. User provides new password with reset token
-5. System updates password and invalidates reset token
+3. User verifies OTP
+4. User provides new password
+5. System updates password
+6. User logs in with new password
 
 ## Security Features
 
@@ -141,15 +142,18 @@ All custom fields use the `bema_` prefix to avoid conflicts:
 
 ### Authentication Endpoints
 - `POST /wp-json/bema-hub/v1/auth/signup` - User registration
-- `POST /wp-json/bema-hub/v1/auth/verify-otp` - OTP verification
+- `POST /wp-json/bema-hub/v1/auth/verify-otp` - OTP verification (no authentication required)
 - `POST /wp-json/bema-hub/v1/auth/signin` - User login
 - `POST /wp-json/bema-hub/v1/auth/social-login` - Social authentication
 - `POST /wp-json/bema-hub/v1/auth/signout` - User signout
 - `POST /wp-json/bema-hub/v1/auth/validate` - Token validation
 - `POST /wp-json/bema-hub/v1/auth/reset-password-request` - Password reset request
+- `POST /wp-json/bema-hub/v1/auth/reset-password-verify` - Password reset OTP verification (no authentication required)
+- `POST /wp-json/bema-hub/v1/auth/reset-password` - Set new password (no reset token)
 
 ### Protected Endpoints
-- `GET /wp-json/bema-hub/v1/profile` - User profile information
+- `GET /wp-json/bema-hub/v1/profile` - Get user profile information
+- `PUT /wp-json/bema-hub/v1/profile` - Update user profile information
 
 ## Implementation Details
 
@@ -168,10 +172,25 @@ The system uses a modular controller-based approach:
 
 ### Shared OTP Fields
 Instead of creating separate OTP fields for each use case:
-- Single OTP field (`bema_otp_code`) is used for all verification purposes
-- Purpose is tracked with `bema_otp_purpose` field
+- Single OTP field ([bema_otp_code](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/doc/user-meta-fields.md#L188-L189)) is used for all verification purposes
+- Purpose is tracked with [bema_otp_purpose](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/doc/user-meta-fields.md#L196-L197) field
 - This prevents data duplication and simplifies management
 - Users can only have one active OTP at a time
+
+### Avatar/Profile Picture Support
+- Uses WordPress's built-in avatar system (Gravatar by default)
+- Profile endpoint returns `avatar_url` field with the user's avatar
+- Avatars are automatically generated based on the user's email address
+- No custom profile picture field is needed, leveraging WordPress's existing infrastructure
+
+### No Reset Tokens
+- Password reset flow does not use reset tokens
+- Verification is done through OTP validation
+- After setting new password, user must login with new credentials
+
+### Immutable Fields
+- `bema_referred_by` is only set during signup and cannot be updated later
+- Standard WordPress fields `first_name` and `last_name` are used instead of custom `bema_first_name` and `bema_last_name`
 
 ### Error Handling
 - All endpoints return appropriate HTTP status codes
@@ -184,6 +203,25 @@ Instead of creating separate OTP fields for each use case:
 - Caching should be implemented for frequently accessed data
 - Heavy operations are avoided in the request lifecycle
 - Logging is performed efficiently to minimize performance impact
+
+## Frontend Integration
+
+The Bema Hub plugin API endpoints are designed to work seamlessly with modern frontend frameworks using Redux Toolkit RTK Query with `fetchBaseQuery`. 
+
+### Redux Architecture
+The frontend implementation follows a modern Redux pattern with clear separation of concerns:
+1. **Auth Slice**: Manages local application state (user, token, flags)
+2. **API Slices**: Handle all server communication and caching
+3. **No Manual Async Logic**: RTK Query manages all async operations automatically
+
+### Benefits
+- **Automatic Caching**: Data is cached efficiently with configurable expiration
+- **Optimistic Updates**: Mutations can update cache immediately with rollback on failure
+- **Loading States**: Automatic loading states per query/mutation
+- **Request Deduplication**: Multiple components using the same query share one request
+- **Background Updates**: RTK Query can refetch data in background when needed
+
+For detailed implementation examples, see [frontend-integration-guide.md](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/doc/frontend-integration-guide.md) and [redux-rtk-query-implementation.md](file:///c:/Users/akfal/Documents/bema-hub/wp-backend/bema-hub-plugin/doc/redux-rtk-query-implementation.md).
 
 ## Future Enhancements
 
@@ -199,7 +237,7 @@ Instead of creating separate OTP fields for each use case:
 - Implement more sophisticated fraud detection
 
 ### Feature Extensions
-- Add user profile picture upload
+- Add user profile picture upload endpoint (if needed beyond WordPress avatars)
 - Implement account linking for multiple social providers
 - Add password strength requirements
 - Implement account recovery options

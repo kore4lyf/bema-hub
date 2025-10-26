@@ -7,7 +7,7 @@
 - **Permissions**: Users with valid OTP codes
 
 ## Description
-This endpoint verifies the OTP code sent to a user's email during signup. Upon successful verification, it marks the user's email as verified and returns a JWT token for authentication.
+This endpoint verifies the OTP code sent to a user's email or phone. It's used for email verification during signup, phone verification, and password reset. No authentication is required as it's used in all scenarios including for already authenticated users verifying phone numbers.
 
 ## Request Body
 ```json
@@ -29,12 +29,7 @@ This endpoint verifies the OTP code sent to a user's email during signup. Upon s
 ```json
 {
   "success": true,
-  "message": "Email verified successfully",
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTYxNjE2MTYsIm5iZiI6MTYxNjE2MTYxNiwiZXhwIjoxNjE2NzY2NDE2LCJkYXRhIjp7InVzZXJfaWQiOjEsInVzZXJfbG9naW4iOiJhZG1pbiIsInVzZXJfZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSJ9fQ.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  "user_id": 123,
-  "user_login": "user_example_com",
-  "user_email": "user@example.com",
-  "user_display_name": "John Doe"
+  "message": "OTP verified successfully"
 }
 ```
 
@@ -115,6 +110,7 @@ curl -X POST \
 
 ### JavaScript (Fetch API)
 ```javascript
+// For email verification during signup
 fetch('/wp-json/bema-hub/v1/auth/verify-otp', {
   method: 'POST',
   headers: {
@@ -128,9 +124,9 @@ fetch('/wp-json/bema-hub/v1/auth/verify-otp', {
 .then(response => response.json())
 .then(data => {
   if (response.ok) {
-    // Store the authentication token for future API requests
-    localStorage.setItem('authToken', data.token);
     console.log('Email verified successfully');
+    // Redirect to login page after email verification
+    window.location.href = '/login';
   } else {
     console.error('OTP verification failed:', data.message);
   }
@@ -149,10 +145,9 @@ This endpoint is implemented in the `Bema_Hub_REST_API` class in the `verify_otp
 3. Retrieving the user by email address
 4. Checking if the OTP code has expired (10-minute expiration)
 5. Verifying the OTP code against the stored hash
-6. Updating the user's email verification status
+6. Updating the appropriate verification status based on OTP purpose
 7. Clearing the OTP data from user meta
-8. Generating a JWT token for the user
-9. Returning the token and user information
+8. Returning success response
 
 ## Security Considerations
 
@@ -160,6 +155,19 @@ This endpoint is implemented in the `Bema_Hub_REST_API` class in the `verify_otp
 2. OTP codes are hashed before storage
 3. OTP codes have a 10-minute expiration time (increased from 5 minutes)
 4. OTP codes are cleared after successful verification
-5. Tokens are generated only after successful verification
-6. Rate limiting should be implemented to prevent brute force attacks
-7. Failed OTP attempts should be logged for security monitoring
+5. Rate limiting should be implemented to prevent brute force attacks
+6. Failed OTP attempts should be logged for security monitoring
+7. No authentication is required as this endpoint is used in multiple scenarios
+
+## Authentication Flow
+
+This endpoint is used in multiple scenarios:
+1. **Email verification during signup**: User verifies email after registration
+2. **Phone verification**: Authenticated users verify phone numbers
+3. **Password reset verification**: User verifies OTP during password reset
+
+After email verification during signup, users are redirected to the login page to authenticate with their credentials.
+
+## Related Endpoints
+- [Signup](endpoint-auth-signup.md) - User registration that triggers OTP
+- [Login](endpoint-auth-login.md) - Authentication after email verification

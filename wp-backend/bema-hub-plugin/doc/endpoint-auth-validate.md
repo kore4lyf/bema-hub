@@ -7,7 +7,7 @@
 - **Permissions**: Any user with a valid token
 
 ## Description
-This endpoint validates a JWT token to check if it's still valid and hasn't expired. It's useful for checking token validity without making a request to a protected endpoint.
+This endpoint validates a JWT token to check if it's still valid and hasn't expired. It's useful for checking token validity without making a request to a protected endpoint. Includes user's avatar URL from WordPress's built-in avatar system.
 
 ## Request Body
 ```json
@@ -30,7 +30,10 @@ This endpoint validates a JWT token to check if it's still valid and hasn't expi
   "data": {
     "user_id": 1,
     "user_login": "admin",
-    "user_email": "admin@example.com"
+    "user_email": "admin@example.com",
+    "first_name": "Admin",
+    "last_name": "User",
+    "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
   }
 }
 ```
@@ -115,13 +118,25 @@ fetch('/wp-json/bema-hub/v1/auth/validate', {
 
 ## Implementation Details
 
-This endpoint is implemented in the `Bema_Hub_REST_API` class in the `validate_token` method. The process involves:
+This endpoint is implemented in the `Bema_Hub_User_Controller` class in the `validate_token` method. The process involves:
 
 1. Validating that a token is provided
 2. Parsing the token into its components (header, payload, signature)
 3. Verifying the token signature using HMAC-SHA256 with the `JWT_SECRET`
 4. Checking that the token hasn't expired
-5. Returning the validation result and user data if valid
+5. Retrieving user information including avatar URL
+6. Returning the validation result and user data if valid
+
+### User Data Included in Response
+The response includes comprehensive user information:
+- **valid**: Boolean indicating if the token is valid
+- **data**: Object containing user information when token is valid
+  - **user_id**: WordPress user ID
+  - **user_login**: WordPress username
+  - **user_email**: User's email address
+  - **first_name**: User's first name (WordPress field)
+  - **last_name**: User's last name (WordPress field)
+  - **avatar_url**: URL to user's avatar from WordPress's `get_avatar` function
 
 ## Security Considerations
 
@@ -130,3 +145,17 @@ This endpoint is implemented in the `Bema_Hub_REST_API` class in the `validate_t
 3. The `JWT_SECRET` should be a strong, unique value stored in `wp-config.php`
 4. All communication should happen over HTTPS
 5. Tokens should be validated before making requests to protected endpoints
+6. All validation attempts are logged for security monitoring
+
+## Avatar Information
+
+The response includes an `avatar_url` field that contains the URL to the user's avatar. This is generated using WordPress's built-in `get_avatar()` function, which:
+- Uses Gravatar by default based on the user's email address
+- Falls back to a default avatar if no Gravatar is found
+- Returns an avatar sized at 96x96 pixels
+- Can be customized with themes and plugins
+
+## Related Endpoints
+- [Login](endpoint-auth-login.md) - User authentication
+- [Social Login](endpoint-auth-social-login.md) - Social authentication
+- [Signout](endpoint-auth-signout.md) - User signout
