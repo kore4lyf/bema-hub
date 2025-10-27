@@ -2,7 +2,7 @@
 
 import { useDispatch } from 'react-redux';
 import { useSocialLoginMutation } from '@/lib/api/authApi';
-import { setCredentials, setPendingUserEmail } from '@/lib/features/auth/authSlice';
+import { setCredentials } from '@/lib/features/auth/authSlice';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -28,15 +28,19 @@ export function GoogleLoginButton() {
       
       if (result.token) {
         dispatch(setCredentials({
-          user: {
-            id: result.user_id || '',
-            email: result.user_email || socialData.email,
-            name: result.user_display_name || `${socialData.first_name} ${socialData.last_name}`,
-          },
-          token: result.token
+          authData: {
+            ...result,
+            timestamp: new Date().toISOString(),
+          }
         }));
         toast.success('Google login successful!');
-        router.push('/dashboard');
+        
+        // Route based on email verification status
+        if (result.bema_email_verified === false) {
+          router.push('/signup/verify');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (error: any) {
       toast.error(error.data?.message || 'Google login failed');
@@ -79,15 +83,19 @@ export function FacebookLoginButton() {
               
               if (result.token) {
                 dispatch(setCredentials({
-                  user: {
-                    id: result.user_id || '',
-                    email: result.user_email || socialData.email,
-                    name: result.user_display_name || `${socialData.first_name} ${socialData.last_name}`,
-                  },
-                  token: result.token
+                  authData: {
+                    ...result,
+                    timestamp: new Date().toISOString(),
+                  }
                 }));
                 toast.success('Facebook login successful!');
-                router.push('/dashboard');
+                
+                // Route based on email verification status
+                if (result.bema_email_verified === false) {
+                  router.push('/signup/verify');
+                } else {
+                  router.push('/dashboard');
+                }
               }
             } catch (error: any) {
               toast.error(error.data?.message || 'Facebook login failed');
@@ -129,15 +137,19 @@ export function TwitterLoginButton() {
       
       if (result.token) {
         dispatch(setCredentials({
-          user: {
-            id: result.user_id || '',
-            email: result.user_email || socialData.email,
-            name: result.user_display_name || `${socialData.first_name} ${socialData.last_name}`,
-          },
-          token: result.token
+          authData: {
+            ...result,
+            timestamp: new Date().toISOString(),
+          }
         }));
         toast.success('Twitter login successful!');
-        router.push('/dashboard');
+        
+        // Route based on email verification status
+        if (result.bema_email_verified === false) {
+          router.push('/signup/verify');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (error: any) {
       toast.error(error.data?.message || 'Twitter login failed');

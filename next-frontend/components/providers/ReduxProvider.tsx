@@ -7,8 +7,14 @@ import { useEffect } from 'react'
 
 function AuthHydration({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Hydrate auth state from localStorage on mount
-    store.dispatch(hydrateAuth())
+    const savedAuth = localStorage.getItem('authData')
+    if (savedAuth) {
+      try {
+        store.dispatch(hydrateAuth(JSON.parse(savedAuth)))
+      } catch (error) {
+        localStorage.removeItem('authData')
+      }
+    }
   }, [])
 
   return <>{children}</>

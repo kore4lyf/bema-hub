@@ -29,18 +29,12 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action: PayloadAction<{ user: User; token: string; authData?: any }>) => {
-      const { user, token, authData } = action.payload
+      const { user, token } = action.payload
       state.user = user
       state.token = token
       state.isAuthenticated = true
-      
-      // Store complete auth data (includes token)
-      const completeAuthData = authData || { token, user, isAuthenticated: true }
-      localStorage.setItem('authData', JSON.stringify(completeAuthData))
     },
     signOut: (state) => {
-      localStorage.removeItem('authData')
-      
       state.user = null
       state.token = null
       state.isAuthenticated = false
@@ -48,8 +42,6 @@ const authSlice = createSlice({
       state.resetUserEmail = null
     },
     logout: (state) => {
-      localStorage.removeItem('authData')
-      
       state.user = null
       state.token = null
       state.isAuthenticated = false
@@ -68,22 +60,8 @@ const authSlice = createSlice({
     clearResetUserEmail: (state) => {
       state.resetUserEmail = null
     },
-    hydrateAuth: (state) => {
-      if (typeof window !== 'undefined') {
-        const authData = localStorage.getItem('authData')
-        if (authData) {
-          try {
-            const parsedData = JSON.parse(authData)
-            if (parsedData.user && parsedData.token) {
-              state.user = parsedData.user
-              state.token = parsedData.token
-              state.isAuthenticated = parsedData.isAuthenticated || true
-            }
-          } catch (error) {
-            localStorage.removeItem('authData')
-          }
-        }
-      }
+    hydrateAuth: (state, action: PayloadAction<AuthState>) => {
+      return { ...state, ...action.payload }
     },
   },
 })
@@ -96,6 +74,6 @@ export const {
   clearPendingUserEmail, 
   setResetUserEmail,
   clearResetUserEmail,
-  hydrateAuth 
+  hydrateAuth
 } = authSlice.actions
 export default authSlice.reducer

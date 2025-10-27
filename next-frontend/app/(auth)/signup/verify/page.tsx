@@ -1,0 +1,207 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { Loader2, Mail } from "lucide-react";
+import { toast } from "sonner";
+import { useDispatch, useSelector } from "react-redux";
+import { useVerifyOtpMutation, useResendOtpMutation } from "@/lib/api/authApi";
+import { setCredentials } from "@/lib/features/auth/authSlice";
+import { RootState } from "@/lib/store";
+
+export default function VerifyOTPPage() {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  
+  const [verifyOTP, { isLoading: isVerifying }] = useVerifyOtpMutation();
+  const [resendOtp, { isLoading: isResending }] = useResendOtpMutation();
+  
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [userEmail, setUserEmail] = useState('');
+  
+  const { pendingUserEmail } = useSelector((state: RootState) => state.auth);
+
+  console.log("authData: ",useSelector((state: RootState) => state.auth));
+  useEffect(() => {
+    // Get user data from Redux state (persisted automatically)
+    const email = pendingUserEmail;
+    
+    if (!email) {
+      toast.error("No signup data found. Please sign up first.");
+      router.push('/signup');
+      return;
+    } else {
+      setUserEmail(email);
+    }
+  }, [pendingUserEmail, router]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  const handleOTPChange = (index: number, value: string) => {
+    if (value.length > 1) return;
+    
+    const newOtp = [...otpCode];
+    newOtp[index] = value;
+    setOtpCode(newOtp);
+    
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOTPKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      if (prevInput) {
+        prevInput.focus();
+      }
+    }
+  };
+
+  const handleOTPSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const otpString = otpCode.join('');
+    if (otpString.length !== 6) {
+      toast.error("Please enter the complete 6-digit code");
+      return;
+    }
+
+    if (!userEmail) {
+      toast.error("Email not found. Please sign up again.");
+      router.push('/signup');
+      return;
+    }
+
+    try {
+      const result = await verifyOTP({
+        email: userEmail,
+        otp_code: otpString
+      }).unwrap();
+
+      // Set credentials if verification was successful
+      if (result.token) {
+        dispatch(setCredentials({
+          user: {
+            id: result.user_id?.toString() || '',
+            email: result.user_email || userEmail,
+            name: result.user_display_name || '',
+            username: result.user_login,
+            avatar_url: result.avatar_url
+          },
+          token: result.token,
+          authData: result
+        }));
+        
+        toast.success("Email verified successfully!");
+        router.push("/dashboard");
+      } else {
+        toast.success("Email verified successfully! Please sign in.");
+        router.push("/signin");
+      }
+    } catch (err: any) {
+      toast.error(err.data?.message || "OTP verification failed");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!userEmail || resendTimer > 0) return;
+    
+    try {
+      await resendOtp({ email: userEmail }).unwrap();
+      toast.success("New verification code sent to your email");
+      setResendTimer(60); // 60 second cooldown
+    } catch (err: any) {
+      toast.error(err.data?.message || "Failed to resend code");
+    }
+  };
+
+  if (!userEmail) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader className="text-center">
+        <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+          <Mail className="w-6 h-6 text-primary" />
+        </div>
+        <CardTitle className="text-2xl">Check your email</CardTitle>
+        <CardDescription>
+          We've sent a verification code to <strong>{userEmail}</strong>
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent>
+        <form onSubmit={handleOTPSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="otp">Verification Code</Label>
+            <div className="flex justify-center gap-3">
+              {otpCode.map((digit, index) => (
+                <Input
+                  key={index}
+                  id={`otp-${index}`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOTPChange(index, e.target.value)}
+                  onKeyDown={(e) => handleOTPKeyDown(index, e)}
+                  className="w-12 h-12 text-center text-xl p-0"
+                  autoFocus={index === 0}
+                />
+              ))}
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full" size="lg" disabled={isVerifying || otpCode.some(d => !d)}>
+            {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Email"}
+          </Button>
+        </form>
+      </CardContent>
+      
+      <CardFooter className="flex flex-col gap-2">
+        <p className="text-center text-sm text-muted-foreground">
+          Didn't receive the code?
+        </p>
+        <Button 
+          variant="link" 
+          className="text-primary hover:underline p-0 h-auto"
+          onClick={handleResendOtp}
+          disabled={isResending || resendTimer > 0}
+        >
+          {isResending ? (
+            <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Sending...</>
+          ) : resendTimer > 0 ? (
+            `Resend in ${resendTimer}s`
+          ) : (
+            "Resend code"
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}

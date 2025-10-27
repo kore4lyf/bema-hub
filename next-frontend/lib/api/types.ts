@@ -77,6 +77,7 @@ export interface AuthResponse {
   user_login?: string
   user_display_name?: string
   avatar_url?: string
+  bema_email_verified?: boolean
 }
 
 export interface ProfileResponse {
@@ -111,5 +112,6 @@ export interface ValidateTokenResponse {
     user_login: string
     user_email: string
     avatar_url: string
+    bema_email_verified: boolean
   }
 }

@@ -10,14 +10,12 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
     - [Verify OTP](#verify-otp)
     - [Login](#login)
     - [Social Login](#social-login)
-    - [Signout](#signout)
     - [Validate Token](#validate-token)
-    - [Reset Password Request](#reset-password-request)
+    - [Resend OTP](#resend-otp)
     - [Reset Password Verify](#reset-password-verify)
     - [Reset Password](#reset-password)
   - [Protected Endpoints](#protected-endpoints)
     - [Get User Profile](#get-user-profile)
-    - [Update User Profile](#update-user-profile)
 
 ## Authentication Endpoints
 
@@ -28,7 +26,7 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 **Description**: Register a new user account with email verification. This endpoint creates a new user in the WordPress system and sends an OTP code for email verification.
 
 **Request Body**:
-```json
+``json
 {
   "email": "user@example.com",
   "password": "securepassword123",
@@ -42,11 +40,12 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 ```
 
 **Success Response (200)**:
-```json
+``json
 {
   "success": true,
   "message": "Account created successfully. Please check your email for verification code.",
-  "user_email": "user@example.com"
+  "user_email": "user@example.com",
+  "bema_email_verified": false
 }
 ```
 
@@ -96,7 +95,7 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 **Description**: Authenticate users with their username or email address and password, then returns a JWT token for subsequent authorized requests.
 
 **Request Body**:
-```json
+``json
 {
   "username": "admin",
   "password": "password123"
@@ -104,7 +103,7 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 ```
 
 **Success Response (200)**:
-```json
+``json
 {
   "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTYxNjE2MTYsIm5iZiI6MTYxNjE2MTYxNiwiZXhwIjoxNjE2NzY2NDE2LCJkYXRhIjp7InVzZXJfaWQiOjEsInVzZXJfbG9naW4iOiJhZG1pbiIsInVzZXJfZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSJ9fQ.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
   "user_id": 1,
@@ -113,7 +112,8 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
   "user_display_name": "Administrator",
   "first_name": "Admin",
   "last_name": "User",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
+  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
+  "bema_email_verified": true
 }
 ```
 
@@ -145,7 +145,7 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 ```
 
 **Success Response (200)**:
-```json
+``json
 {
   "success": true,
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -155,7 +155,8 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
   "user_display_name": "John Doe",
   "first_name": "John",
   "last_name": "Doe",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
+  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
+  "bema_email_verified": true
 }
 ```
 
@@ -208,7 +209,7 @@ Authorization: Bearer <token>
 ```
 
 **Success Response (200)**:
-```json
+``json
 {
   "valid": true,
   "data": {
@@ -217,7 +218,8 @@ Authorization: Bearer <token>
     "user_email": "admin@example.com",
     "first_name": "Admin",
     "last_name": "User",
-    "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
+    "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
+    "bema_email_verified": true
   }
 }
 ```
@@ -253,6 +255,35 @@ Authorization: Bearer <token>
 **Error Responses**:
 - Missing Email (400)
 - Invalid Email Format (400)
+
+---
+
+### Resend OTP
+
+**Endpoint**: `POST /wp-json/bema-hub/v1/auth/resend-otp`
+
+**Description**: Resends a new OTP code to the user's email address when the previous OTP has expired or been lost. This endpoint can be used for both email verification during signup and password reset scenarios. No authentication is required.
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Success Response (200)**:
+```json
+{
+  "success": true,
+  "message": "A new verification code has been sent to your email."
+}
+```
+
+**Error Responses**:
+- Missing Email (400)
+- Invalid Email Format (400)
+- User Not Found (404)
+- No Active OTP (400)
 
 ---
 
@@ -335,7 +366,7 @@ Authorization: Bearer <token>
 **Request Body**: None
 
 **Success Response (200)**:
-```json
+``json
 {
   "id": 1,
   "username": "admin",
@@ -395,7 +426,7 @@ Authorization: Bearer <token>
 ```
 
 **Success Response (200)**:
-```json
+``json
 {
   "id": 123,
   "username": "user_example_com",

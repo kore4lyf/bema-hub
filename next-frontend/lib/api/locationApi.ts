@@ -12,6 +12,12 @@ interface State {
   state_code: string
 }
 
+interface DialCode {
+  name: string
+  code: string
+  dial_code: string
+}
+
 interface StatesResponse {
   error: boolean
   msg: string
@@ -26,6 +32,12 @@ interface CountriesResponse {
   error: boolean
   msg: string
   data: Country[]
+}
+
+interface DialCodeResponse {
+  error: boolean
+  msg: string
+  data: DialCode
 }
 
 export const locationApi = createApi({
@@ -54,7 +66,15 @@ export const locationApi = createApi({
       transformResponse: (response: StatesResponse) => 
         response.data.states.sort((a, b) => a.name.localeCompare(b.name)),
     }),
+    getDialCode: builder.mutation<DialCode, string>({
+      query: (country) => ({
+        url: 'countries/codes',
+        method: 'POST',
+        body: { country },
+      }),
+      transformResponse: (response: DialCodeResponse) => response.data,
+    }),
   }),
 })
 
-export const { useGetCountriesQuery, useGetStatesMutation } = locationApi
+export const { useGetCountriesQuery, useGetStatesMutation, useGetDialCodeMutation } = locationApi

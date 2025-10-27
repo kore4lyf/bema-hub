@@ -7,9 +7,9 @@ export default function AuthLayout({
 }) {
   return (
     <main className="grid h-screen lg:grid-cols-2">
-      <div className="flex items-center justify-center px-4 py-12 overflow-y-scroll">
+      <>
         {children}
-      </div>
+      </>
 
       <div className="hidden lg:flex items-center justify-center relative bg-muted">
         <img 
