@@ -100,14 +100,32 @@ class Bema_Hub_OTP_Controller {
             ));
         }
 
-        // In a real implementation, you would send the OTP via email
+        // Send OTP via email (in a real implementation, you would send an actual email)
         // For now, we'll just log it
+        /* 
+         * REMOVED: Sensitive OTP code logging that should never appear in production
+         * if ($this->logger) {
+         *     $this->logger->info('OTP generated for new user', array(
+         *         'user_id' => $user_id,
+         *         'otp_code' => $otp_code // In production, never log OTP codes
+         *     ));
+         * }
+         */
+
         if ($this->logger) {
-            $this->logger->info('Password reset OTP code (for development only)', array(
+            $this->logger->info('OTP generated for new user', array(
                 'user_id' => $user->ID,
                 'otp_code' => $otp_code // In production, never log OTP codes
             ));
         }
+
+         if ($this->logger) {
+             $this->logger->info('Password reset OTP code (for development only)', array(
+                 'user_id' => $user->ID,
+                 'otp_code' => $otp_code // In production, never log OTP codes
+             ));
+         }
+         
 
         return new \WP_REST_Response(array(
             'success' => true,
@@ -128,7 +146,7 @@ class Bema_Hub_OTP_Controller {
         // Validate required parameters
         if (empty($email)) {
             if ($this->logger) {
-                $this->logger->warning('Resend OTP request with missing email');
+                $this->logger->info('Resend OTP request with missing email');
             }
             return new \WP_Error('missing_email', 'Email is required', array('status' => 400));
         }
@@ -136,7 +154,7 @@ class Bema_Hub_OTP_Controller {
         // Validate email format
         if (!\is_email($email)) {
             if ($this->logger) {
-                $this->logger->warning('Resend OTP request with invalid email format');
+                $this->logger->info('Resend OTP request with invalid email format');
             }
             return new \WP_Error('invalid_email', 'Please provide a valid email address', array('status' => 400));
         }
@@ -145,7 +163,7 @@ class Bema_Hub_OTP_Controller {
         $user = \get_user_by('email', $email);
         if (!$user) {
             if ($this->logger) {
-                $this->logger->warning('Resend OTP request for non-existent email', array('email' => $email));
+                $this->logger->info('Resend OTP request for non-existent email', array('email' => $email));
             }
             return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
         }
@@ -163,7 +181,7 @@ class Bema_Hub_OTP_Controller {
             } else {
                 // User is already verified and has no active OTP
                 if ($this->logger) {
-                    $this->logger->warning('Resend OTP request for user with no active OTP', array('user_id' => $user->ID));
+                    $this->logger->info('Resend OTP request for user with no active OTP', array('user_id' => $user->ID));
                 }
                 return new \WP_Error('no_active_otp', 'No active OTP found for this user. Please initiate the appropriate process first.', array('status' => 400));
             }
@@ -179,23 +197,32 @@ class Bema_Hub_OTP_Controller {
         \update_user_meta($user->ID, 'bema_otp_expiry', $otp_expiry);
         \update_user_meta($user->ID, 'bema_otp_purpose', $otp_purpose); // Maintain the same purpose
 
-        // Log the OTP generation
+        // Log the OTP generation (without sensitive data)
         if ($this->logger) {
             $this->logger->info('OTP resent for user', array(
                 'user_id' => $user->ID,
-                'user_email' => $email,
                 'purpose' => $otp_purpose
             ));
         }
 
         // In a real implementation, you would send the OTP via email
         // For now, we'll just log it
-        if ($this->logger) {
-            $this->logger->info('Resent OTP code (for development only)', array(
-                'user_id' => $user->ID,
-                'otp_code' => $otp_code // In production, never log OTP codes
-            ));
-        }
+        /* 
+         * REMOVED: Sensitive OTP code logging that should never appear in production
+         * if ($this->logger) {
+         *     $this->logger->info('Resent OTP code (for development only)', array(
+         *         'user_id' => $user->ID,
+         *         'otp_code' => $otp_code // In production, never log OTP codes
+         *     ));
+         * }
+         */
+
+         if ($this->logger) {
+             $this->logger->info('Resent OTP code (for development only)', array(
+                 'user_id' => $user->ID,
+                 'otp_code' => $otp_code // In production, never log OTP codes
+             ));
+         }
 
         $message = 'A new verification code has been sent to your email.';
         if ($otp_purpose === 'password_reset') {
@@ -224,7 +251,7 @@ class Bema_Hub_OTP_Controller {
         // Validate required parameters
         if (empty($email) || empty($otp_code)) {
             if ($this->logger) {
-                $this->logger->warning('OTP verification attempt with missing parameters');
+                $this->logger->info('OTP verification attempt with missing parameters');
             }
             return new \WP_Error('missing_fields', 'Email and OTP code are required', array('status' => 400));
         }
@@ -232,7 +259,7 @@ class Bema_Hub_OTP_Controller {
         // Validate email format
         if (!\is_email($email)) {
             if ($this->logger) {
-                $this->logger->warning('OTP verification attempt with invalid email format');
+                $this->logger->info('OTP verification attempt with invalid email format');
             }
             return new \WP_Error('invalid_email', 'Please provide a valid email address', array('status' => 400));
         }
@@ -241,7 +268,7 @@ class Bema_Hub_OTP_Controller {
         $user = \get_user_by('email', $email);
         if (!$user) {
             if ($this->logger) {
-                $this->logger->warning('OTP verification attempt for non-existent email', array('email' => $email));
+                $this->logger->info('OTP verification attempt for non-existent email', array('email' => $email));
             }
             return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
         }
@@ -259,7 +286,7 @@ class Bema_Hub_OTP_Controller {
             \delete_user_meta($user->ID, 'bema_otp_purpose');
             
             if ($this->logger) {
-                $this->logger->warning('OTP verification failed: OTP expired', array('user_id' => $user->ID));
+                $this->logger->info('OTP verification failed: OTP expired', array('user_id' => $user->ID));
             }
             return new \WP_Error('otp_expired', 'OTP code has expired. Please request a new one.', array('status' => 400));
         }
@@ -267,7 +294,7 @@ class Bema_Hub_OTP_Controller {
         // Verify OTP using JWT auth helper function
         if (!$this->jwt_auth->wp_verify_otp($otp_code, $stored_otp)) {
             if ($this->logger) {
-                $this->logger->warning('OTP verification failed: Invalid OTP', array('user_id' => $user->ID));
+                $this->logger->info('OTP verification failed: Invalid OTP', array('user_id' => $user->ID));
             }
             return new \WP_Error('invalid_otp', 'Invalid OTP code', array('status' => 400));
         }

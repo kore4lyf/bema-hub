@@ -133,6 +133,22 @@ class Bema_Hub_User_Controller {
             $this->logger->info('Token validation successful', array('user_id' => $result['data']['user_id']));
         }
 
+        // Get email verification status
+        $email_verified = (bool) \get_user_meta($result['data']['user_id'], 'bema_email_verified', true);
+        
+        // Get referred by field
+        $referred_by = \get_user_meta($result['data']['user_id'], 'bema_referred_by', true);
+        
+        // Add email verification status and referred by to the response data
+        $result['data']['bema_email_verified'] = $email_verified;
+        $result['data']['bema_referred_by'] = $referred_by;
+        
+        // Get user roles
+        $user = \get_user_by('ID', $result['data']['user_id']);
+        if ($user) {
+            $result['data']['roles'] = $user->roles;
+        }
+
         return new \WP_REST_Response(array(
             'valid' => true,
             'data' => $result['data']
@@ -189,6 +205,8 @@ class Bema_Hub_User_Controller {
             'bema_google_id' => \get_user_meta($user_id, 'bema_google_id', true),
             'bema_facebook_id' => \get_user_meta($user_id, 'bema_facebook_id', true),
             'bema_twitter_id' => \get_user_meta($user_id, 'bema_twitter_id', true),
+            // User roles (not updateable)
+            'roles' => $user->roles
         );
 
         return new \WP_REST_Response($profile, 200);
@@ -210,7 +228,7 @@ class Bema_Hub_User_Controller {
             return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
         }
 
-        // Update user meta fields if provided (excluding bema_referred_by which is immutable)
+        // Update user meta fields if provided (excluding bema_referred_by and roles which are immutable)
         $updatable_fields = array(
             'bema_phone_number',
             'bema_country',

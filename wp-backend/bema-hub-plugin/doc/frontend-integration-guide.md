@@ -31,7 +31,7 @@ Your implementation follows a modern Redux pattern with clear separation of conc
 2. **API Slices**: Handle all server communication and caching
 3. **No Manual Async Logic**: RTK Query manages all async operations automatically
 
-```javascript
+```
 // Key Conceptual Differences from Traditional Approaches
 
 // ❌ Old Thinking: Manual async thunks with manual state management
@@ -70,7 +70,7 @@ export const authApi = createApi({
 
 Here's how to implement the Bema Hub API endpoints using your RTK Query pattern:
 
-```javascript
+```
 // services/api.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
@@ -236,10 +236,7 @@ export const store = configureStore({
   auth: {
     user: { id, email, name },
     token: "jwt_token",
-    isAuthenticated: true,
-    pendingUserEmail: null,
-    resetUserEmail: null,
-    resetToken: null
+    isAuthenticated: true
   },
 
   // RTK Query managed state (automatic)
@@ -269,6 +266,7 @@ import { setCredentials, setPendingEmail } from '../store/slices/authSlice'
 const SignupFlow = () => {
   const dispatch = useDispatch()
   const [step, setStep] = useState('signup') // 'signup' | 'otp'
+  const [userEmail, setUserEmail] = useState('') // Store email in component state
   
   // RTK Query mutations with automatic loading states
   const [signUp, { isLoading: isSigningUp, error: signUpError }] = useSignUpMutation()
@@ -278,7 +276,7 @@ const SignupFlow = () => {
   const handleSignup = async (userData) => {
     try {
       const result = await signUp(userData).unwrap()
-      dispatch(setPendingEmail(result.user_email))
+      setUserEmail(result.user_email) // Store email in component state
       setStep('otp')
     } catch (err) {
       console.error('Signup failed:', err)
@@ -310,6 +308,7 @@ const SignupFlow = () => {
       )}
       {step === 'otp' && (
         <OtpVerificationForm 
+          email={userEmail} // Use component state instead of Redux
           onSubmit={handleVerifyOtp}
           loading={isVerifying}
           error={verifyError}
@@ -420,11 +419,11 @@ import {
   useSetNewPasswordMutation 
 } from '../services/api'
 import { useDispatch } from 'react-redux'
-import { setResetEmail } from '../store/slices/authSlice'
 
 const PasswordResetFlow = () => {
   const dispatch = useDispatch()
   const [step, setStep] = useState('request') // 'request' | 'otp' | 'new-password'
+  const [userEmail, setUserEmail] = useState('') // Store email in component state
   
   const [requestReset, { isLoading: requesting }] = useRequestPasswordResetMutation()
   const [verifyOtp, { isLoading: verifying }] = useVerifyResetOtpMutation()
@@ -433,7 +432,7 @@ const PasswordResetFlow = () => {
   const handleRequestReset = async ({ email }) => {
     try {
       await requestReset({ email }).unwrap()
-      dispatch(setResetEmail(email))
+      setUserEmail(email) // Store email in component state
       setStep('otp')
     } catch (err) {
       console.error('Reset request failed:', err)
@@ -464,10 +463,18 @@ const PasswordResetFlow = () => {
         <ResetRequestForm onSubmit={handleRequestReset} loading={requesting} />
       )}
       {step === 'otp' && (
-        <ResetOtpForm onSubmit={handleVerifyOtp} loading={verifying} />
+        <ResetOtpForm 
+          email={userEmail} // Use component state instead of Redux
+          onSubmit={handleVerifyOtp} 
+          loading={verifying} 
+        />
       )}
       {step === 'new-password' && (
-        <NewPasswordForm onSubmit={handleSetNewPassword} loading={settingPassword} />
+        <NewPasswordForm 
+          email={userEmail} // Use component state instead of Redux
+          onSubmit={handleSetNewPassword} 
+          loading={settingPassword} 
+        />
       )}
     </div>
   )

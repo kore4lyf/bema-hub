@@ -28,8 +28,8 @@ class Bema_Hub_JWT_Auth {
      */
     public function __construct() {
         // Initialize logger
-        if (class_exists('Bema_Hub\Bema_Hub_Logger')) {
-            $this->logger = \Bema_Hub\Bema_Hub_Logger::create('jwt-auth');
+        if (class_exists('Bema_Hub\\Bema_Hub_Logger')) {
+            $this->logger = Bema_Hub_Logger::create('jwt-auth');
         }
     }
 
@@ -46,9 +46,9 @@ class Bema_Hub_JWT_Auth {
         $user = \get_user_by('ID', $user_id);
         if (!$user) {
             if ($this->logger) {
-                $this->logger->error('Failed to generate token: User not found', ['user_id' => $user_id]);
+                $this->logger->error('Failed to generate token: User not found', array('user_id' => $user_id));
             }
-            return new \WP_Error('user_not_found', 'User not found', ['status' => 404]);
+            return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
         }
 
         // Check if JWT_SECRET is defined
@@ -57,7 +57,7 @@ class Bema_Hub_JWT_Auth {
                 $this->logger->error('Failed to generate token: JWT_SECRET not defined');
             }
             // Return a more user-friendly error
-            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
+            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', array('status' => 500));
         }
 
         // Get avatar URL
@@ -66,6 +66,18 @@ class Bema_Hub_JWT_Auth {
         // Get first_name and last_name from user meta (WordPress stores these as meta fields)
         $first_name = \get_user_meta($user_id, 'first_name', true);
         $last_name = \get_user_meta($user_id, 'last_name', true);
+        
+        // Get email verification status and ensure it's boolean
+        $email_verified = (bool) \get_user_meta($user_id, 'bema_email_verified', true);
+        
+        // Get referred by field
+        $referred_by = \get_user_meta($user_id, 'bema_referred_by', true);
+        
+        // Get user role (WordPress users have one primary role)
+        $user_role = '';
+        if (!empty($user->roles)) {
+            $user_role = reset($user->roles); // Get the first (primary) role
+        }
 
         // Create the token payload
         $issued_at = \time();
@@ -82,7 +94,10 @@ class Bema_Hub_JWT_Auth {
                 'user_email' => $user->user_email,
                 'first_name' => $first_name,
                 'last_name' => $last_name,
-                'avatar_url' => $avatar_url
+                'avatar_url' => $avatar_url,
+                'bema_email_verified' => $email_verified,
+                'bema_referred_by' => $referred_by,
+                'role' => $user_role
             )
         );
 
@@ -93,21 +108,21 @@ class Bema_Hub_JWT_Auth {
 
         // Log the token generation
         if ($this->logger) {
-            $this->logger->info('Generating JWT token for user', [
+            $this->logger->info('Generating JWT token for user', array(
                 'user_id' => $user_id,
                 'user_login' => $user->user_login,
                 'user_email' => $user->user_email
-            ]);
+            ));
         }
 
         // Generate and return the token
         $token = $this->encode_token($payload);
         
         if ($this->logger && !\is_wp_error($token)) {
-            $this->logger->info('JWT token generated successfully', [
+            $this->logger->info('JWT token generated successfully', array(
                 'user_id' => $user_id,
                 'token_preview' => \substr($token, 0, 10) . '...'
-            ]);
+            ));
         }
         
         return $token;
@@ -126,10 +141,10 @@ class Bema_Hub_JWT_Auth {
             if ($this->logger) {
                 $this->logger->error('Failed to encode token: JWT_SECRET not defined');
             }
-            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
+            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', array('status' => 500));
         }
 
-        $header = $this->base64url_encode(\json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
+        $header = $this->base64url_encode(\json_encode(array('typ' => 'JWT', 'alg' => 'HS256')));
         $payload_encoded = $this->base64url_encode(\json_encode($payload));
         
         $signature = \hash_hmac('sha256', "$header.$payload_encoded", \JWT_SECRET, true);
@@ -151,18 +166,18 @@ class Bema_Hub_JWT_Auth {
             if ($this->logger) {
                 $this->logger->error('Failed to validate token: JWT_SECRET not defined');
             }
-            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', ['status' => 500]);
+            return new \WP_Error('jwt_secret_not_defined', 'JWT_SECRET constant not defined in wp-config.php', array('status' => 500));
         }
 
         // Split the token
         $token_parts = \explode('.', $token);
         if (\count($token_parts) != 3) {
             if ($this->logger) {
-                $this->logger->warning('JWT token validation failed: Invalid token format', [
+                $this->logger->warning('JWT token validation failed: Invalid token format', array(
                     'token_preview' => \substr($token, 0, 10) . '...'
-                ]);
+                ));
             }
-            return new \WP_Error('invalid_token', 'Invalid token format', ['status' => 401]);
+            return new \WP_Error('invalid_token', 'Invalid token format', array('status' => 401));
         }
 
         list($header_encoded, $payload_encoded, $signature_encoded) = $token_parts;
@@ -173,11 +188,11 @@ class Bema_Hub_JWT_Auth {
 
         if (!\hash_equals($expected_signature_encoded, $signature_encoded)) {
             if ($this->logger) {
-                $this->logger->warning('JWT token validation failed: Invalid signature', [
+                $this->logger->warning('JWT token validation failed: Invalid signature', array(
                     'token_preview' => \substr($token, 0, 10) . '...'
-                ]);
+                ));
             }
-            return new \WP_Error('invalid_token', 'Invalid token signature', ['status' => 401]);
+            return new \WP_Error('invalid_token', 'Invalid token signature', array('status' => 401));
         }
 
         // Decode payload
@@ -186,33 +201,33 @@ class Bema_Hub_JWT_Auth {
 
         if (\json_last_error() !== \JSON_ERROR_NONE) {
             if ($this->logger) {
-                $this->logger->error('JWT token validation failed: Invalid payload JSON', [
+                $this->logger->error('JWT token validation failed: Invalid payload JSON', array(
                     'error' => \json_last_error_msg(),
                     'token_preview' => \substr($token, 0, 10) . '...'
-                ]);
+                ));
             }
-            return new \WP_Error('invalid_token', 'Invalid token payload', ['status' => 401]);
+            return new \WP_Error('invalid_token', 'Invalid token payload', array('status' => 401));
         }
 
         // Check expiration
         if (isset($payload['exp']) && \time() > $payload['exp']) {
             if ($this->logger) {
-                $this->logger->info('JWT token validation failed: Token expired', [
+                $this->logger->info('JWT token validation failed: Token expired', array(
                     'exp' => $payload['exp'],
                     'current_time' => \time(),
                     'user_id' => isset($payload['data']['user_id']) ? $payload['data']['user_id'] : 'unknown'
-                ]);
+                ));
             }
-            return new \WP_Error('token_expired', 'Token has expired', ['status' => 401]);
+            return new \WP_Error('token_expired', 'Token has expired', array('status' => 401));
         }
 
         // Log successful validation
         if ($this->logger) {
-            $this->logger->info('JWT token validated successfully', [
+            $this->logger->info('JWT token validated successfully', array(
                 'user_id' => isset($payload['data']['user_id']) ? $payload['data']['user_id'] : 'unknown',
                 'user_email' => isset($payload['data']['user_email']) ? $payload['data']['user_email'] : 'unknown',
                 'token_preview' => \substr($token, 0, 10) . '...'
-            ]);
+            ));
         }
 
         return $payload;
@@ -229,9 +244,9 @@ class Bema_Hub_JWT_Auth {
     public function authenticate_and_generate_token($username_or_email, $password) {
         // Log authentication attempt
         if ($this->logger) {
-            $this->logger->info('Authentication attempt', [
+            $this->logger->info('Authentication attempt', array(
                 'username_or_email' => $username_or_email
-            ]);
+            ));
         }
         
         // Authenticate user
@@ -239,11 +254,11 @@ class Bema_Hub_JWT_Auth {
         
         if (\is_wp_error($user)) {
             if ($this->logger) {
-                $this->logger->warning('Authentication failed', [
+                $this->logger->warning('Authentication failed', array(
                     'username_or_email' => $username_or_email,
                     'error_code' => $user->get_error_code(),
                     'error_message' => $user->get_error_message()
-                ]);
+                ));
             }
             return $user;
         }
@@ -253,12 +268,12 @@ class Bema_Hub_JWT_Auth {
         
         if (\is_wp_error($token)) {
             if ($this->logger) {
-                $this->logger->error('Token generation failed after successful authentication', [
+                $this->logger->error('Token generation failed after successful authentication', array(
                     'user_id' => $user->ID,
                     'user_email' => $user->user_email,
                     'error_code' => $token->get_error_code(),
                     'error_message' => $token->get_error_message()
-                ]);
+                ));
             }
             return $token;
         }
@@ -269,19 +284,31 @@ class Bema_Hub_JWT_Auth {
         // Get first_name and last_name from user meta (WordPress stores these as meta fields)
         $first_name = \get_user_meta($user->ID, 'first_name', true);
         $last_name = \get_user_meta($user->ID, 'last_name', true);
+        
+        // Get email verification status and ensure it's boolean
+        $email_verified = (bool) \get_user_meta($user->ID, 'bema_email_verified', true);
+        
+        // Get referred by field
+        $referred_by = \get_user_meta($user->ID, 'bema_referred_by', true);
+        
+        // Get user role (WordPress users have one primary role)
+        $user_role = '';
+        if (!empty($user->roles)) {
+            $user_role = reset($user->roles); // Get the first (primary) role
+        }
 
         // Log successful authentication and token generation
         if ($this->logger) {
-            $this->logger->info('Authentication and token generation successful', [
+            $this->logger->info('Authentication and token generation successful', array(
                 'user_id' => $user->ID,
                 'user_login' => $user->user_login,
                 'user_email' => $user->user_email,
                 'token_preview' => \substr($token, 0, 10) . '...'
-            ]);
+            ));
         }
 
         // Return token and user data
-        return [
+        return array(
             'token' => $token,
             'user_id' => $user->ID,
             'user_login' => $user->user_login,
@@ -289,8 +316,11 @@ class Bema_Hub_JWT_Auth {
             'user_display_name' => $user->display_name,
             'first_name' => $first_name,
             'last_name' => $last_name,
-            'avatar_url' => $avatar_url
-        ];
+            'avatar_url' => $avatar_url,
+            'bema_email_verified' => $email_verified,
+            'bema_referred_by' => $referred_by,
+            'role' => $user_role
+        );
     }
 
     /**
@@ -306,9 +336,9 @@ class Bema_Hub_JWT_Auth {
         $result = \hash_equals($stored_hash, \hash('sha256', $otp_code));
         
         if ($this->logger) {
-            $this->logger->info('OTP verification attempt', [
+            $this->logger->info('OTP verification attempt', array(
                 'result' => $result ? 'success' : 'failure'
-            ]);
+            ));
         }
         
         return $result;

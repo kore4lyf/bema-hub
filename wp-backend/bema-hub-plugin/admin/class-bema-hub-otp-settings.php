@@ -2,16 +2,15 @@
 namespace Bema_Hub\Admin;
 
 /**
- * The admin-specific functionality of the plugin.
+ * OTP Settings class for Bema Hub plugin
  *
- * Defines the plugin name, version, and two examples hooks for how to
- * enqueue the admin-specific stylesheet and JavaScript.
+ * Handles the admin settings page for OTP verification configuration
  *
  * @since      1.0.0
  * @package    Bema_Hub
  * @subpackage Bema_Hub/admin
  */
-class Bema_Hub_Admin {
+class Bema_Hub_OTP_Settings {
 
 	/**
 	 * The ID of this plugin.
@@ -41,24 +40,6 @@ class Bema_Hub_Admin {
 	public function __construct( $plugin_name, $version ) {
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-	}
-
-	/**
-	 * Register the stylesheets for the admin area.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_styles() {
-		\wp_enqueue_style( $this->plugin_name, \plugin_dir_url( __FILE__ ) . 'css/bema-hub-admin.css', array(), $this->version, 'all' );
-	}
-
-	/**
-	 * Register the JavaScript for the admin area.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_scripts() {
-		\wp_enqueue_script( $this->plugin_name, \plugin_dir_url( __FILE__ ) . 'js/bema-hub-admin.js', array( 'jquery' ), $this->version, false );
 	}
 
 	/**

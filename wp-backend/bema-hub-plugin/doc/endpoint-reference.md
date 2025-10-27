@@ -9,9 +9,11 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
     - [Signup](#signup)
     - [Verify OTP](#verify-otp)
     - [Login](#login)
+    - [Social Login](#social-login)
     - [Signout](#signout)
     - [Validate Token](#validate-token)
     - [Reset Password Request](#reset-password-request)
+    - [Resend OTP](#resend-otp)
     - [Reset Password Verify](#reset-password-verify)
     - [Reset Password](#reset-password)
   - [Protected Endpoints](#protected-endpoints)
@@ -27,7 +29,7 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 **Description**: Register a new user account with email verification. This endpoint creates a new user in the WordPress system and sends an OTP code for email verification.
 
 **Request Body**:
-``json
+```json
 {
   "email": "user@example.com",
   "password": "securepassword123",
@@ -45,7 +47,10 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 {
   "success": true,
   "message": "Account created successfully. Please check your email for verification code.",
-  "user_email": "user@example.com"
+  "user_email": "user@example.com",
+  "bema_email_verified": false,
+  "bema_referred_by": "R-SOS2026-123",
+  "role": "subscriber"
 }
 ```
 
@@ -103,7 +108,7 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
 ```
 
 **Success Response (200)**:
-``json
+```json
 {
   "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTYxNjE2MTYsIm5iZiI6MTYxNjE2MTYxNiwiZXhwIjoxNjE2NzY2NDE2LCJkYXRhIjp7InVzZXJfaWQiOjEsInVzZXJfbG9naW4iOiJhZG1pbiIsInVzZXJfZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSJ9fQ.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
   "user_id": 1,
@@ -112,11 +117,12 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
   "user_display_name": "Administrator",
   "first_name": "Admin",
   "last_name": "User",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
+  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
+  "bema_email_verified": true,
+  "bema_referred_by": "R-SOS2026-123",
+  "role": "administrator"
 }
 ```
-
-**Note**: Unlike some other endpoints, the signin endpoint does not include a "success" field in its response. The presence of the token and user data indicates a successful authentication.
 
 **Error Responses**:
 - Authentication Failed (401)
@@ -156,7 +162,10 @@ This document provides a comprehensive reference for all Bema Hub API endpoints,
   "user_display_name": "John Doe",
   "first_name": "John",
   "last_name": "Doe",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
+  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
+  "bema_email_verified": true,
+  "bema_referred_by": "R-SOS2026-123",
+  "role": "subscriber"
 }
 ```
 
@@ -218,7 +227,10 @@ Authorization: Bearer <token>
     "user_email": "admin@example.com",
     "first_name": "Admin",
     "last_name": "User",
-    "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g"
+    "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
+    "bema_email_verified": true,
+    "bema_referred_by": "R-SOS2026-123",
+    "role": "administrator"
   }
 }
 ```
@@ -365,7 +377,7 @@ Authorization: Bearer <token>
 **Request Body**: None
 
 **Success Response (200)**:
-``json
+```json
 {
   "id": 1,
   "username": "admin",
@@ -388,7 +400,8 @@ Authorization: Bearer <token>
   "bema_last_signout": 1609459200,
   "bema_google_id": "123456789012345678901",
   "bema_facebook_id": "1234567890123456",
-  "bema_twitter_id": "123456789"
+  "bema_twitter_id": "123456789",
+  "role": "administrator"
 }
 ```
 
@@ -405,7 +418,7 @@ Authorization: Bearer <token>
 
 **Endpoint**: `PUT /wp-json/bema-hub/v1/profile`
 
-**Description**: Updates the profile information of the authenticated user. Note that `bema_referred_by` cannot be updated as it's only set during signup.
+**Description**: Updates the profile information of the authenticated user. Note that `bema_referred_by` and `role` cannot be updated as they're only set during signup.
 
 **Headers**:
 ```
@@ -425,7 +438,7 @@ Authorization: Bearer <token>
 ```
 
 **Success Response (200)**:
-``json
+```json
 {
   "id": 123,
   "username": "user_example_com",
@@ -448,7 +461,8 @@ Authorization: Bearer <token>
   "bema_last_signout": 1609459200,
   "bema_google_id": "123456789012345678901",
   "bema_facebook_id": "1234567890123456",
-  "bema_twitter_id": "123456789"
+  "bema_twitter_id": "123456789",
+  "role": "subscriber"
 }
 ```
 

@@ -170,21 +170,48 @@ class Bema_Hub_Auth_Controller {
         
         // Send OTP via email (in a real implementation, you would send an actual email)
         // For now, we'll just log it
+        /* 
+         * REMOVED: Sensitive OTP code logging that should never appear in production
+         * if ($this->logger) {
+         *     $this->logger->info('OTP generated for new user', array(
+         *         'user_id' => $user_id,
+         *         'otp_code' => $otp_code // In production, never log OTP codes
+         *     ));
+         * }
+         */
+
+         if ($this->logger) {
+             $this->logger->info('Password reset OTP code (for development only)', array(
+                 'user_id' => $user_id,
+                 'otp_code' => $otp_code // In production, never log OTP codes
+             ));
+         }
+         
         if ($this->logger) {
-            $this->logger->info('OTP generated for new user', array(
-                'user_id' => $user_id,
-                'otp_code' => $otp_code // In production, never log OTP codes
-            ));
+            $this->logger->info('OTP generated for new user', array('user_id' => $user_id));
         }
 
         if ($this->logger) {
             $this->logger->info('User signup successful', array('user_id' => $user_id, 'email' => $email));
         }
 
+        // Get email verification status
+        $email_verified = (bool) \get_user_meta($user_id, 'bema_email_verified', true);
+        
+        // Get referred by field
+        $referred_by_value = \get_user_meta($user_id, 'bema_referred_by', true);
+        
+        // Get user roles
+        $user = \get_user_by('ID', $user_id);
+        $user_roles = $user->roles;
+
         return new \WP_REST_Response(array(
             'success' => true,
             'message' => 'Account created successfully. Please check your email for verification code.',
-            'user_email' => $email // Return email instead of user_id
+            'user_email' => $email, // Return email instead of user_id
+            'bema_email_verified' => $email_verified,
+            'bema_referred_by' => $referred_by_value,
+            'roles' => $user_roles
         ), 200);
     }
 
@@ -208,7 +235,7 @@ class Bema_Hub_Auth_Controller {
         // Validate required parameters
         if (empty($provider) || empty($provider_id) || empty($email) || empty($first_name) || empty($last_name)) {
             if ($this->logger) {
-                $this->logger->warning('Social login attempt with missing required fields');
+                $this->logger->info('Social login attempt with missing required fields');
             }
             return new \WP_Error('missing_fields', 'Provider, provider ID, email, first name, and last name are required', array('status' => 400));
         }
@@ -217,7 +244,7 @@ class Bema_Hub_Auth_Controller {
         $valid_providers = array('google', 'facebook', 'twitter');
         if (!\in_array($provider, $valid_providers)) {
             if ($this->logger) {
-                $this->logger->warning('Social login attempt with invalid provider', array('provider' => $provider));
+                $this->logger->info('Social login attempt with invalid provider', array('provider' => $provider));
             }
             return new \WP_Error('invalid_provider', 'Invalid provider. Must be google, facebook, or twitter', array('status' => 400));
         }
@@ -361,6 +388,15 @@ class Bema_Hub_Auth_Controller {
         // Get avatar URL
         $avatar_url = \get_avatar_url($user->ID);
 
+        // Get email verification status
+        $email_verified = (bool) \get_user_meta($user->ID, 'bema_email_verified', true);
+        
+        // Get referred by field
+        $referred_by_value = \get_user_meta($user->ID, 'bema_referred_by', true);
+        
+        // Get user roles
+        $user_roles = $user->roles;
+
         if ($this->logger) {
             $this->logger->info('Social login successful', array(
                 'user_id' => $user->ID,
@@ -377,7 +413,10 @@ class Bema_Hub_Auth_Controller {
             'user_display_name' => $user->display_name,
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
-            'avatar_url' => $avatar_url
+            'avatar_url' => $avatar_url,
+            'bema_email_verified' => $email_verified,
+            'bema_referred_by' => $referred_by_value,
+            'roles' => $user_roles
         ), 200);
     }
 

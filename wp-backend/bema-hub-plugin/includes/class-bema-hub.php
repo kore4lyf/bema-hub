@@ -168,6 +168,10 @@ class Bema_Hub {
 		$plugin_admin = new \Bema_Hub\Admin\Bema_Hub_Admin( $this->get_plugin_name(), $this->get_version() );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_menu_page' );
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_email_settings' );
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_otp_settings' );
+		$this->loader->add_action( 'phpmailer_init', $plugin_admin, 'load_smtp_settings' );
 	}
 
 	/**

@@ -116,8 +116,6 @@ fetch('/wp-json/bema-hub/v1/auth/signup', {
 .then(data => {
   if (data.success) {
     console.log('Signup successful:', data.message);
-    // Save email for OTP verification
-    localStorage.setItem('pendingUserEmail', data.user_email);
     // After OTP verification, redirect to login page
   } else {
     console.error('Signup failed:', data.message);
@@ -129,7 +127,7 @@ fetch('/wp-json/bema-hub/v1/auth/signup', {
 ```
 
 ### cURL
-```bash
+```
 curl -X POST \
   https://yoursite.com/wp-json/bema-hub/v1/auth/signup \
   -H 'Content-Type: application/json' \
