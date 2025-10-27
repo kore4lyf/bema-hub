@@ -116,6 +116,101 @@ class Bema_Hub_OTP_Controller {
     }
 
     /**
+     * Resend OTP code for email verification or password reset
+     *
+     * @since 1.0.0
+     * @param \WP_REST_Request $request The request object
+     * @return \WP_REST_Response|\WP_Error The response or error
+     */
+    public function resend_otp($request) {
+        $email = $request->get_param('email');
+
+        // Validate required parameters
+        if (empty($email)) {
+            if ($this->logger) {
+                $this->logger->warning('Resend OTP request with missing email');
+            }
+            return new \WP_Error('missing_email', 'Email is required', array('status' => 400));
+        }
+
+        // Validate email format
+        if (!\is_email($email)) {
+            if ($this->logger) {
+                $this->logger->warning('Resend OTP request with invalid email format');
+            }
+            return new \WP_Error('invalid_email', 'Please provide a valid email address', array('status' => 400));
+        }
+
+        // Get user by email
+        $user = \get_user_by('email', $email);
+        if (!$user) {
+            if ($this->logger) {
+                $this->logger->warning('Resend OTP request for non-existent email', array('email' => $email));
+            }
+            return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
+        }
+
+        // Check if user has an existing OTP
+        $existing_otp = \get_user_meta($user->ID, 'bema_otp_code', true);
+        $otp_purpose = \get_user_meta($user->ID, 'bema_otp_purpose', true);
+        
+        // If no existing OTP, check if this is for email verification during signup
+        if (empty($existing_otp)) {
+            // Check if user's email is not verified (signup case)
+            $email_verified = \get_user_meta($user->ID, 'bema_email_verified', true);
+            if ($email_verified !== '1' && $email_verified !== true) {
+                $otp_purpose = 'email_verification';
+            } else {
+                // User is already verified and has no active OTP
+                if ($this->logger) {
+                    $this->logger->warning('Resend OTP request for user with no active OTP', array('user_id' => $user->ID));
+                }
+                return new \WP_Error('no_active_otp', 'No active OTP found for this user. Please initiate the appropriate process first.', array('status' => 400));
+            }
+        }
+
+        // Generate and send new OTP (reusing existing OTP fields)
+        $otp_code = \rand(100000, 999999);
+        $otp_expiry = \time() + 600; // 10 minutes expiry (as per existing specification)
+
+        // Hash OTP before storing using SHA256
+        $hashed_otp = \hash('sha256', $otp_code);
+        \update_user_meta($user->ID, 'bema_otp_code', $hashed_otp);
+        \update_user_meta($user->ID, 'bema_otp_expiry', $otp_expiry);
+        \update_user_meta($user->ID, 'bema_otp_purpose', $otp_purpose); // Maintain the same purpose
+
+        // Log the OTP generation
+        if ($this->logger) {
+            $this->logger->info('OTP resent for user', array(
+                'user_id' => $user->ID,
+                'user_email' => $email,
+                'purpose' => $otp_purpose
+            ));
+        }
+
+        // In a real implementation, you would send the OTP via email
+        // For now, we'll just log it
+        if ($this->logger) {
+            $this->logger->info('Resent OTP code (for development only)', array(
+                'user_id' => $user->ID,
+                'otp_code' => $otp_code // In production, never log OTP codes
+            ));
+        }
+
+        $message = 'A new verification code has been sent to your email.';
+        if ($otp_purpose === 'password_reset') {
+            $message = 'A new password reset code has been sent to your email.';
+        } else if ($otp_purpose === 'email_verification') {
+            $message = 'A new email verification code has been sent to your email.';
+        }
+
+        return new \WP_REST_Response(array(
+            'success' => true,
+            'message' => $message
+        ), 200);
+    }
+
+    /**
      * Verify OTP for email verification or password reset
      *
      * @since 1.0.0

@@ -251,6 +251,10 @@ For optimal performance:
 7. **Privacy**: Handle personal data in accordance with privacy regulations
 8. **Testing**: Test all field operations thoroughly
 
+## Important Notes
+
+- **First Name and Last Name**: The standard WordPress `first_name` and `last_name` user properties are used instead of custom `bema_first_name` and `bema_last_name` meta fields. These are set during user creation and retrieved directly from the user object.
+
 ## Field Reference Table
 
 | Field Name | Type | Required | Description |

@@ -189,6 +189,13 @@ class Bema_Hub_REST_API {
             'permission_callback' => '__return_true',
         ));
 
+        // Register resend OTP route
+        \register_rest_route('bema-hub/v1', '/auth/resend-otp', array(
+            'methods' => 'POST',
+            'callback' => array($this->otp_controller, 'resend_otp'),
+            'permission_callback' => '__return_true',
+        ));
+
         // Register protected routes example
         \register_rest_route('bema-hub/v1', '/profile', array(
             'methods' => 'GET',
@@ -232,6 +239,7 @@ class Bema_Hub_REST_API {
             '/bema-hub/v1/auth/verify-otp',
             '/bema-hub/v1/auth/social-login',
             '/bema-hub/v1/auth/reset-password-request',
+            '/bema-hub/v1/auth/resend-otp',
             '/bema-hub/v1/profile'
         );
 

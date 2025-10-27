@@ -98,7 +98,7 @@ All custom fields use the `bema_` prefix to avoid conflicts:
 
 ### 4. Token Management
 1. JWT tokens are generated with 7-day expiration
-2. Tokens contain user ID, login, email, and avatar URL
+2. Tokens contain user ID, login, email, first name, last name, and avatar URL
 3. Tokens are validated on protected endpoints
 4. Tokens can be invalidated through signout
 5. Invalidated tokens are persisted across requests

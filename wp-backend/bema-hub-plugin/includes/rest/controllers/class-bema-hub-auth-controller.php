@@ -109,12 +109,28 @@ class Bema_Hub_Auth_Controller {
             return $user_id;
         }
 
-        // Update user meta fields
-        \update_user_meta($user_id, 'first_name', $first_name);
-        \update_user_meta($user_id, 'last_name', $last_name);
-        \update_user_meta($user_id, 'bema_first_name', $first_name);
-        \update_user_meta($user_id, 'bema_last_name', $last_name);
+        // Update WordPress user fields
+        $userdata = array(
+            'ID' => $user_id,
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'display_name' => $first_name . ' ' . $last_name
+        );
+        $result = \wp_update_user($userdata);
         
+        // Check if user update was successful
+        if (\is_wp_error($result)) {
+            if ($this->logger) {
+                $this->logger->error('User data update failed', array(
+                    'user_id' => $user_id,
+                    'error_code' => $result->get_error_code(),
+                    'error_message' => $result->get_error_message()
+                ));
+            }
+            // Continue with the process even if user update fails, but log the error
+        }
+
+        // Update user meta fields (excluding first_name and last_name)
         if ($phone_number) {
             // Encrypt phone number before storing
             $encrypted_phone = $this->encrypt_data($phone_number);
@@ -255,11 +271,28 @@ class Bema_Hub_Auth_Controller {
                 
                 $user = \get_user_by('ID', $user_id);
                 
-                // Set user meta fields
-                \update_user_meta($user_id, 'first_name', $first_name);
-                \update_user_meta($user_id, 'last_name', $last_name);
-                \update_user_meta($user_id, 'bema_first_name', $first_name);
-                \update_user_meta($user_id, 'bema_last_name', $last_name);
+                // Set WordPress user fields
+                $userdata = array(
+                    'ID' => $user_id,
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'display_name' => $first_name . ' ' . $last_name
+                );
+                $result = \wp_update_user($userdata);
+                
+                // Check if user update was successful
+                if (\is_wp_error($result)) {
+                    if ($this->logger) {
+                        $this->logger->error('Social user data update failed', array(
+                            'user_id' => $user_id,
+                            'error_code' => $result->get_error_code(),
+                            'error_message' => $result->get_error_message()
+                        ));
+                    }
+                    // Continue with the process even if user update fails, but log the error
+                }
+                
+                // Set user meta fields (excluding first_name and last_name)
                 \update_user_meta($user_id, $meta_key, $provider_id);
                 
                 if ($phone_number) {
@@ -325,6 +358,9 @@ class Bema_Hub_Auth_Controller {
             return $token;
         }
 
+        // Get avatar URL
+        $avatar_url = \get_avatar_url($user->ID);
+
         if ($this->logger) {
             $this->logger->info('Social login successful', array(
                 'user_id' => $user->ID,
@@ -338,7 +374,10 @@ class Bema_Hub_Auth_Controller {
             'user_id' => $user->ID,
             'user_login' => $user->user_login,
             'user_email' => $user->user_email,
-            'user_display_name' => $user->display_name
+            'user_display_name' => $user->display_name,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'avatar_url' => $avatar_url
         ), 200);
     }
 

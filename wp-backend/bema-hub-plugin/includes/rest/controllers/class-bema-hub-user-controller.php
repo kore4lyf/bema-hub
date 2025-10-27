@@ -4,7 +4,7 @@ namespace Bema_Hub\REST\Controllers;
 /**
  * User Controller for Bema Hub plugin
  *
- * Handles user management endpoints
+ * Handles user-related endpoints
  *
  * @since      1.0.0
  * @package    Bema_Hub
@@ -17,7 +17,7 @@ class Bema_Hub_User_Controller {
      *
      * @since    1.0.0
      * @access   private
-     * @var      \Bema_Hub\Bema_Hub_Logger    $logger    Logger instance.
+     * @var      Bema_Hub_Logger    $logger    Logger instance.
      */
     private $logger;
 
@@ -26,68 +26,30 @@ class Bema_Hub_User_Controller {
      *
      * @since    1.0.0
      * @access   private
-     * @var      \Bema_Hub\Bema_Hub_JWT_Auth    $jwt_auth    JWT Auth instance.
+     * @var      Bema_Hub_JWT_Auth    $jwt_auth    JWT Auth instance.
      */
     private $jwt_auth;
-
+    
     /**
-     * Array to store invalidated tokens (in production, this should be stored in database)
+     * Invalidated tokens array.
      *
      * @since    1.0.0
      * @access   private
-     * @var      array    $invalidated_tokens    List of invalidated tokens.
+     * @var      array    $invalidated_tokens    Invalidated tokens.
      */
-    private $invalidated_tokens = array();
+    private $invalidated_tokens;
 
     /**
      * Initialize the controller and set its properties.
      *
      * @since    1.0.0
-     * @param    \Bema_Hub\Bema_Hub_Logger       $logger    Logger instance.
-     * @param    \Bema_Hub\Bema_Hub_JWT_Auth     $jwt_auth  JWT Auth instance.
+     * @param    Bema_Hub_Logger       $logger    Logger instance.
+     * @param    Bema_Hub_JWT_Auth     $jwt_auth  JWT Auth instance.
      */
     public function __construct($logger, $jwt_auth) {
         $this->logger = $logger;
         $this->jwt_auth = $jwt_auth;
-        
-        // Load invalidated tokens from database
-        $this->invalidated_tokens = \get_option('bema_hub_invalidated_tokens', array());
-        
-        // Register shutdown hook to save invalidated tokens
-        \add_action('shutdown', array($this, 'save_invalidated_tokens'));
-    }
-
-    /**
-     * Set invalidated tokens (injected from main REST API class)
-     *
-     * @since 1.0.0
-     * @param array $tokens Invalidated tokens array
-     */
-    public function set_invalidated_tokens($tokens) {
-        $this->invalidated_tokens = $tokens;
-    }
-
-    /**
-     * Get invalidated tokens
-     *
-     * @since 1.0.0
-     * @return array Invalidated tokens array
-     */
-    public function get_invalidated_tokens() {
-        return $this->invalidated_tokens;
-    }
-
-    /**
-     * Save invalidated tokens to database
-     *
-     * @since 1.0.0
-     */
-    public function save_invalidated_tokens() {
-        \update_option('bema_hub_invalidated_tokens', $this->invalidated_tokens, false);
-        
-        if ($this->logger) {
-            $this->logger->info('Invalidated tokens saved to database', array('count' => count($this->invalidated_tokens)));
-        }
+        $this->invalidated_tokens = array();
     }
 
     /**
@@ -212,8 +174,6 @@ class Bema_Hub_User_Controller {
             'last_name' => $user->last_name,
             'avatar_url' => $avatar_url,
             // Custom user meta fields
-            'bema_first_name' => \get_user_meta($user_id, 'bema_first_name', true),
-            'bema_last_name' => \get_user_meta($user_id, 'bema_last_name', true),
             'bema_phone_number' => \get_user_meta($user_id, 'bema_phone_number', true),
             'bema_country' => \get_user_meta($user_id, 'bema_country', true),
             'bema_state' => \get_user_meta($user_id, 'bema_state', true),
@@ -250,14 +210,22 @@ class Bema_Hub_User_Controller {
             return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
         }
 
-        // Update user meta fields if provided
+        // Update user meta fields if provided (excluding bema_referred_by which is immutable)
         $updatable_fields = array(
-            'bema_first_name',
-            'bema_last_name',
             'bema_phone_number',
             'bema_country',
             'bema_state',
-            'bema_referred_by'
+            'bema_tier_level',
+            'bema_account_type',
+            'bema_email_verified',
+            'bema_phone_verified',
+            'bema_fraud_flag',
+            'bema_device_id',
+            'bema_last_signin',
+            'bema_last_signout',
+            'bema_google_id',
+            'bema_facebook_id',
+            'bema_twitter_id'
         );
 
         foreach ($updatable_fields as $field) {
@@ -339,5 +307,25 @@ class Bema_Hub_User_Controller {
         $request->set_param('user_id', $result['data']['user_id']);
 
         return true;
+    }
+    
+    /**
+     * Get invalidated tokens
+     *
+     * @since 1.0.0
+     * @return array The invalidated tokens
+     */
+    public function get_invalidated_tokens() {
+        return $this->invalidated_tokens;
+    }
+    
+    /**
+     * Set invalidated tokens
+     *
+     * @since 1.0.0
+     * @param array $tokens The invalidated tokens
+     */
+    public function set_invalidated_tokens($tokens) {
+        $this->invalidated_tokens = $tokens;
     }
 }
