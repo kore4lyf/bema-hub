@@ -1,373 +1,610 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Mail, CheckCircle2 } from "lucide-react";
+import { Loader2, Mail, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { signUp, clearError } from "@/lib/features/auth/authSlice";
-import { fetchCountries, fetchCities, setSelectedCountry, setSelectedCity } from "@/lib/features/location/locationSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { useSignupMutation, useVerifyOtpMutation, useResendOtpMutation } from "@/lib/api/authApi";
+import { setPendingUserEmail, setCredentials } from "@/lib/features/auth/authSlice";
+import { useGetCountriesQuery, useGetStatesMutation } from "@/lib/api/locationApi";
+import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from "@/components/auth/SocialLogin";
+import { RootState } from "@/lib/store";
 
 interface Country {
-  name: { common: string };
-  cca2: string;
-}
-
-interface City {
-  id: number;
   name: string;
+  iso2: string;
+  flag: string;
 }
 
 export default function SignUpPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const searchParams = useSearchParams();
-  const referredBy = searchParams.get("ref") || "";
-  const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const referralCode = searchParams.get('ref');
   
-  const [step, setStep] = useState<"form" | "otp" | "success">("form");
-  const [loadingCities, setLoadingCities] = useState(false);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
+  const [registerUser, { isLoading: isRegistering }] = useSignupMutation();
+  const [verifyOTP, { isLoading: isVerifying }] = useVerifyOtpMutation();
+  const [resendOtp, { isLoading: isResending }] = useResendOtpMutation();
+  const [getStates, { data: states = [], isLoading: statesLoading }] = useGetStatesMutation();
+
+  const [step, setStep] = useState<'register' | 'verify'>('register');
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [lastFetchedCountry, setLastFetchedCountry] = useState('');
+  const [countrySearch, setCountrySearch] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
     country: "",
     countryCode: "",
-    city: "",
-    referred_by: referredBy,
+    state: "",
+    referredBy: referralCode || "",
   });
-  const [otp, setOtp] = useState("");
+
+  // Only fetch countries once - RTK Query will cache this
+  const { data: countries = [], isLoading: countriesLoading } = useGetCountriesQuery();
+  const { pendingUserEmail } = useSelector((state: RootState) => state.auth);
+
+  // Memoized filtered countries for performance
+  const filteredCountries = useMemo(() => {
+    if (!countrySearch) return countries; // Show all countries when no search
+    return countries.filter(country => 
+      country.name.toLowerCase().includes(countrySearch.toLowerCase())
+    );
+  }, [countries, countrySearch]);
 
   useEffect(() => {
-    dispatch(fetchCountries());
-  }, [dispatch]);
+    if (pendingUserEmail) {
+      setStep('verify');
+    }
+  }, [pendingUserEmail]);
 
   useEffect(() => {
-    if (formData.country) {
-      setFormData(prev => ({ ...prev, city: "" }));
-      dispatch(fetchCities(formData.country));
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
     }
-  }, [formData.country, dispatch]);
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
-  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = countries.find(c => c.name.common === e.target.value);
-    if (selectedCountry) {
-      dispatch(setSelectedCountry({ 
-        name: selectedCountry.name.common, 
-        code: selectedCountry.cca2 
-      }));
+  const handleResendOtp = async () => {
+    if (!pendingUserEmail || resendTimer > 0) return;
+    
+    try {
+      await resendOtp({ email: pendingUserEmail }).unwrap();
+      toast.success("New verification code sent to your email");
+      setResendTimer(60); // 60 second cooldown
+    } catch (err: any) {
+      toast.error(err.data?.message || "Failed to resend code");
     }
-    setFormData({
-      ...formData,
-      country: e.target.value,
-      countryCode: selectedCountry?.cca2 || "",
-      city: ""
-    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch(clearError());
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
+  // Memoized state fetcher to prevent unnecessary calls
+  const fetchStatesForCountry = useCallback((country: string) => {
+    if (country && country !== lastFetchedCountry) {
+      getStates(country);
+      setLastFetchedCountry(country);
     }
+  }, [getStates, lastFetchedCountry]);
 
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+  // Only fetch states when country changes and is different from last fetched
+  useEffect(() => {
+    fetchStatesForCountry(formData.country);
+  }, [formData.country, fetchStatesForCountry]);
+
+  // Calculate password strength
+  useEffect(() => {
+    if (formData.password) {
+      let strength = 0;
+      if (formData.password.length >= 8) strength += 1;
+      if (/[A-Z]/.test(formData.password)) strength += 1;
+      if (/[0-9]/.test(formData.password)) strength += 1;
+      if (/[^A-Za-z0-9]/.test(formData.password)) strength += 1;
+      setPasswordStrength(strength);
+    } else {
+      setPasswordStrength(0);
+    }
+  }, [formData.password]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+    
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+    
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    
+    if (!formData.country) {
+      newErrors.country = "Country is required";
+    }
+    
+    if (!formData.state) {
+      newErrors.state = "State is required";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
       return;
     }
 
     try {
-      const result = await dispatch(signUp({
+      const result = await registerUser({
         email: formData.email,
         password: formData.password,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone_number: formData.phoneNumber,
         country: formData.country,
-        state: formData.city,
-        referred_by: formData.referred_by || referredBy,
-      })).unwrap();
+        state: formData.state,
+        referred_by: formData.referredBy,
+      }).unwrap();
 
-      toast.success("Account created successfully!");
-      router.push("/dashboard");
+      dispatch(setPendingUserEmail(formData.email));
+      toast.success("Registration successful! Please check your email for OTP.");
+      setStep('verify');
     } catch (err: any) {
-      toast.error(err || "Sign up failed");
+      toast.error(err.data?.message || "Registration failed");
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // OTP verification would be handled here
-    toast.success("Account verified successfully!");
-    setStep("success");
+  const handleOTPChange = (index: number, value: string) => {
+    if (value.length > 1) return;
+    
+    const newOtp = [...otpCode];
+    newOtp[index] = value;
+    setOtpCode(newOtp);
+    
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
   };
 
-  const handleSocialSignup = async (provider: string) => {
-    try {
-      // Redirect to WordPress social signup endpoints
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (provider === 'google') {
-        window.location.href = `${baseUrl}/wp-json/custom/v1/auth/google?redirect_uri=${window.location.origin}/dashboard`;
-      } else if (provider === 'facebook') {
-        window.location.href = `${baseUrl}/wp-json/custom/v1/auth/facebook?redirect_uri=${window.location.origin}/dashboard`;
-      } else if (provider === 'twitter') {
-        window.location.href = `${baseUrl}/wp-json/custom/v1/auth/twitter?redirect_uri=${window.location.origin}/dashboard`;
+  const handleOTPKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      if (prevInput) {
+        prevInput.focus();
       }
-    } catch (error) {
-      toast.error("Social signup failed. Please try again.");
     }
   };
 
-  return (
-    <div className="w-full max-w-md space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">
-          {step === "form" && "Create your account"}
-          {step === "otp" && "Verify your email"}
-          {step === "success" && "Account created!"}
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {step === "form" && "Start your journey with Bema Hub today"}
-          {step === "otp" && `Enter the code sent to ${formData.email}`}
-          {step === "success" && "Redirecting you to sign in..."}
-        </p>
-      </div>
+  const handleOTPSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const otpString = otpCode.join('');
+    if (otpString.length !== 6) {
+      toast.error("Please enter the complete 6-digit code");
+      return;
+    }
 
-      {error && (
-        <Card className="p-4 border-destructive bg-destructive/10">
-          <p className="text-sm text-destructive">{error}</p>
-        </Card>
-      )}
+    try {
+      const result = await verifyOTP({
+        email: pendingUserEmail!,
+        otp_code: otpString
+      }).unwrap();
 
-      {step === "form" && (
-        <>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="first_name">First Name</Label>
-                <Input
-                  id="first_name"
-                  placeholder="John"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Last Name</Label>
-                <Input
-                  id="last_name"
-                  placeholder="Doe"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
+      // Set credentials if verification was successful
+      if (result.token) {
+        dispatch(setCredentials({
+          user: {
+            id: result.user_id || '',
+            email: result.user_email || pendingUserEmail,
+            name: result.user_display_name || `${formData.firstName} ${formData.lastName}`,
+          },
+          token: result.token
+        }));
+        
+        toast.success("Email verified successfully!");
+        router.push("/dashboard");
+      } else {
+        toast.success("Email verified successfully! Please sign in.");
+        router.push("/signin");
+      }
+    } catch (err: any) {
+      toast.error(err.data?.message || "OTP verification failed");
+    }
+  };
 
+  const handleResendOTP = async () => {
+    try {
+      // Assuming there's an endpoint for resending OTP
+      // This would need to be implemented in the API
+      toast.info("Resend functionality coming soon");
+    } catch (err: any) {
+      toast.error("Failed to resend OTP");
+    }
+  };
+
+  if (step === 'verify') {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <Mail className="w-6 h-6 text-primary" />
+          </div>
+          <CardTitle className="text-2xl">Check your email</CardTitle>
+          <CardDescription>
+            We've sent a verification code to <strong>{pendingUserEmail}</strong>
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleOTPSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <div className="relative">
-                  <select
-                    id="country"
-                    value={formData.country}
-                    onChange={handleCountryChange}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    required
-                  >
-                    <option value="">Select country</option>
-                    {countries.map((country) => (
-                      <option key={country.cca2} value={country.name.common} data-flag={country.cca2.toLowerCase()}>
-                        {country.name.common}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.countryCode && (
-                    <img 
-                      src={`https://flagcdn.com/w20/${formData.countryCode.toLowerCase()}.png`}
-                      alt={`${formData.country} flag`}
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-3"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  )}
-                </div>
+              <Label htmlFor="otp">Verification Code</Label>
+              <div className="flex justify-center gap-3">
+                {otpCode.map((digit, index) => (
+                  <Input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOTPChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOTPKeyDown(index, e)}
+                    className="w-12 h-12 text-center text-xl p-0"
+                    autoFocus={index === 0}
+                  />
+                ))}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">State</Label>
-                <select
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  disabled={!formData.country || loadingCities}
-                  required
-                >
-                  <option value="">
-                    {loadingCities ? "Loading states..." : "Select state"}
-                  </option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.name}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {errors.otp && <p className="text-sm text-destructive">{errors.otp}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Min. 8 characters"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="referred_by">Referral Code (Optional)</Label>
-              <Input
-                id="referred_by"
-                placeholder="Enter referral code"
-                value={formData.referred_by}
-                onChange={(e) => setFormData({ ...formData, referred_by: e.target.value })}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
+            <Button type="submit" className="w-full" size="lg" disabled={isVerifying || otpCode.some(d => !d)}>
+              {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Email"}
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Button variant="outline" type="button" onClick={() => handleSocialSignup("google")}>
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Google
-            </Button>
-            <Button variant="outline" type="button" onClick={() => handleSocialSignup("facebook")}>
-              <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-              Facebook
-            </Button>
-            <Button variant="outline" type="button" onClick={() => handleSocialSignup("twitter")}>
-              <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-              X
-            </Button>
-          </div>
-
+        </CardContent>
+        
+        <CardFooter className="flex flex-col gap-2">
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/signin" className="font-semibold text-primary hover:underline">
-              Sign in
-            </Link>
+            Didn't receive the code?
           </p>
-        </>
-      )}
+          <Button 
+            variant="link" 
+            className="text-primary hover:underline p-0 h-auto"
+            onClick={handleResendOtp}
+            disabled={isResending || resendTimer > 0}
+          >
+            {isResending ? (
+              <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Sending...</>
+            ) : resendTimer > 0 ? (
+              `Resend in ${resendTimer}s`
+            ) : (
+              "Resend code"
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
-      {step === "otp" && (
-        <form onSubmit={handleVerifyOTP} className="space-y-6">
-          <Card className="p-6 text-center">
-            <Mail className="h-12 w-12 mx-auto mb-4 text-primary" />
-            <p className="text-sm text-muted-foreground mb-4">
-              We've sent a 6-digit verification code to your email address.
-            </p>
-          </Card>
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">Create your account</CardTitle>
+        <CardDescription>
+          Join our community and start your journey
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent>
+        <form onSubmit={handleRegisterSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name *</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="Enter your first name"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
+                className={errors.firstName ? "border-destructive" : ""}
+              />
+              {errors.firstName && <p className="text-sm text-destructive">{errors.firstName}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name *</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Enter your last name"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
+                className={errors.lastName ? "border-destructive" : ""}
+              />
+              {errors.lastName && <p className="text-sm text-destructive">{errors.lastName}</p>}
+            </div>
+          </div>
 
           <div className="space-y-2">
-            <Label htmlFor="otp">Verification Code</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
-              id="otp"
-              type="text"
-              placeholder="000000"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="text-center text-2xl tracking-widest"
-              required
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              className={errors.email ? "border-destructive" : ""}
             />
+            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={isLoading || otp.length !== 6}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Create Account"}
-          </Button>
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              placeholder="Enter your phone number"
+              value={formData.phoneNumber}
+              onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="country">Country *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className={`w-full justify-between ${errors.country ? "border-destructive" : ""}`}
+                    disabled={countriesLoading}
+                  >
+                    {formData.country || (countriesLoading ? 'Loading...' : 'Select Country')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Search countries..." 
+                      value={countrySearch}
+                      onValueChange={setCountrySearch}
+                    />
+                    <CommandEmpty>No country found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {filteredCountries.map((country) => (
+                        <CommandItem
+                          key={country.iso2}
+                          value={country.name}
+                          onSelect={(value) => {
+                            const selectedCountry = countries.find((c) => c.name === value);
+                            handleInputChange("country", value);
+                            handleInputChange("countryCode", selectedCountry?.iso2 || "");
+                            handleInputChange("state", "");
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={country.flag}
+                              alt=""
+                              className="w-4 h-3 object-cover rounded-sm"
+                              loading="lazy"
+                            />
+                            {country.name}
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors.country && <p className="text-sm text-destructive">{errors.country}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="state">State *</Label>
+              <Select
+                value={formData.state}
+                onValueChange={(value) => handleInputChange("state", value)}
+                disabled={!formData.country || statesLoading}
+              >
+                <SelectTrigger className={errors.state ? "border-destructive" : ""}>
+                  <SelectValue placeholder={statesLoading ? "Loading states..." : "Select state"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {states.map((state: any) => (
+                    <SelectItem key={state.state_code} value={state.name}>
+                      {state.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.state && <p className="text-sm text-destructive">{errors.state}</p>}
+            </div>
+          </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full"
-            onClick={() => setStep("form")}
-          >
-            Back to form
+          <div className="space-y-2">
+            <Label htmlFor="password">Password *</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a password"
+                value={formData.password}
+                onChange={(e) => handleInputChange("password", e.target.value)}
+                className={errors.password ? "border-destructive pr-10" : "pr-10"}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+            {formData.password && (
+              <div className="space-y-1">
+                <div className="flex h-1.5 gap-1">
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      className={`flex-1 rounded-full ${
+                        level <= passwordStrength
+                          ? passwordStrength < 3
+                            ? "bg-red-500"
+                            : passwordStrength < 4
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                          : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {passwordStrength < 2
+                    ? "Weak password"
+                    : passwordStrength < 4
+                    ? "Medium password"
+                    : "Strong password"}
+                </p>
+              </div>
+            )}
+            {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password *</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                className={errors.confirmPassword ? "border-destructive pr-10" : "pr-10"}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+            {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+          </div>
+
+          {referralCode && (
+            <div className="space-y-2">
+              <Label htmlFor="referredBy">Referral Code</Label>
+              <Input
+                id="referredBy"
+                type="text"
+                placeholder="Enter referral code (optional)"
+                value={formData.referredBy}
+                onChange={(e) => handleInputChange("referredBy", e.target.value)}
+                disabled
+              />
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" size="lg" disabled={isRegistering}>
+            {isRegistering ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
           </Button>
         </form>
-      )}
+      </CardContent>
 
-      {step === "success" && (
-        <Card className="p-8 text-center">
-          <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-green-500" />
-          <h2 className="text-xl font-semibold mb-2">Account Created Successfully!</h2>
-          <p className="text-sm text-muted-foreground">
-            You can now sign in with your credentials.
-          </p>
-        </Card>
-      )}
-    </div>
+      <div className="relative px-6">
+        <div className="absolute inset-0 flex items-center">
+          <Separator />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+        </div>
+      </div>
+
+      <CardContent className="pt-4">
+        <div className="grid grid-cols-3 gap-3">
+          <GoogleLoginButton />
+          <FacebookLoginButton />
+          <TwitterLoginButton />
+        </div>
+      </CardContent>
+
+      <CardFooter className="flex flex-col">
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/signin" className="font-semibold text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </CardFooter>
+    </Card>
   );
 }

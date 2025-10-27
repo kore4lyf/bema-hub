@@ -17,7 +17,7 @@ export default function AuthLayout({
           alt="Artist community" 
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-background/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20" />
         <div className="relative z-10 text-right text-white px-12">
           <Link href="/" className="text-4xl font-bold block mb-8">
             Bema Hub

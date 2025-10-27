@@ -5,37 +5,38 @@ interface Country {
   cca2: string
 }
 
-interface City {
+interface State {
   id: number
   name: string
 }
 
 interface LocationState {
   countries: Country[]
-  cities: City[]
+  states: State[]
   selectedCountry: string | null
   selectedCountryCode: string | null
-  selectedCity: string | null
+  selectedState: string | null
   isLoadingCountries: boolean
-  isLoadingCities: boolean
+  isLoadingStates: boolean
   error: string | null
 }
 
 const initialState: LocationState = {
   countries: [],
-  cities: [],
+  states: [],
   selectedCountry: null,
   selectedCountryCode: null,
-  selectedCity: null,
+  selectedState: null,
   isLoadingCountries: false,
-  isLoadingCities: false,
+  isLoadingStates: false,
   error: null,
 }
 
 export const fetchCountries = createAsyncThunk(
   'location/fetchCountries',
   async () => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/countries`)
+    // Use free public REST Countries API
+    const response = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2')
     
     if (!response.ok) {
       throw new Error('Failed to load countries')
@@ -48,30 +49,10 @@ export const fetchCountries = createAsyncThunk(
   }
 )
 
-export const fetchCities = createAsyncThunk(
-  'location/fetchCities',
+export const fetchStates = createAsyncThunk(
+  'location/fetchStates',
   async (country: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/states`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ country }),
-    })
-    
-    const data = await response.json()
-    
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to load states')
-    }
-    
-    if (data.data && Array.isArray(data.data)) {
-      return data.data.map((cityName: string, index: number) => ({
-        id: index + 1,
-        name: cityName
-      })).sort((a: City, b: City) => a.name.localeCompare(b.name))
-    }
-    
+    // For now, return empty array since we're using RTK Query
     return []
   }
 )
@@ -83,17 +64,17 @@ const locationSlice = createSlice({
     setSelectedCountry: (state, action: PayloadAction<{ name: string; code: string }>) => {
       state.selectedCountry = action.payload.name
       state.selectedCountryCode = action.payload.code
-      state.selectedCity = null
-      state.cities = []
+      state.selectedState = null
+      state.states = []
     },
-    setSelectedCity: (state, action: PayloadAction<string>) => {
-      state.selectedCity = action.payload
+    setSelectedState: (state, action: PayloadAction<string>) => {
+      state.selectedState = action.payload
     },
     clearLocation: (state) => {
       state.selectedCountry = null
       state.selectedCountryCode = null
-      state.selectedCity = null
-      state.cities = []
+      state.selectedState = null
+      state.states = []
     },
     clearError: (state) => {
       state.error = null
@@ -114,21 +95,21 @@ const locationSlice = createSlice({
         state.isLoadingCountries = false
         state.error = action.error.message || 'Failed to load countries'
       })
-      // Fetch Cities
-      .addCase(fetchCities.pending, (state) => {
-        state.isLoadingCities = true
+      // Fetch States
+      .addCase(fetchStates.pending, (state) => {
+        state.isLoadingStates = true
         state.error = null
       })
-      .addCase(fetchCities.fulfilled, (state, action) => {
-        state.isLoadingCities = false
-        state.cities = action.payload
+      .addCase(fetchStates.fulfilled, (state, action) => {
+        state.isLoadingStates = false
+        state.states = action.payload
       })
-      .addCase(fetchCities.rejected, (state, action) => {
-        state.isLoadingCities = false
+      .addCase(fetchStates.rejected, (state, action) => {
+        state.isLoadingStates = false
         state.error = action.error.message || 'Failed to load states'
       })
   },
 })
 
-export const { setSelectedCountry, setSelectedCity, clearLocation, clearError } = locationSlice.actions
+export const { setSelectedCountry, setSelectedState, clearLocation, clearError } = locationSlice.actions
 export default locationSlice.reducer
