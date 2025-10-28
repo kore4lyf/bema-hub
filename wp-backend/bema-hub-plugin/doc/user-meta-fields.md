@@ -9,6 +9,12 @@ This document describes all custom user meta fields used in the Bema Hub plugin.
   - [Verification and Security Fields](#verification-and-security-fields)
   - [Social Authentication Fields](#social-authentication-fields)
   - [System and Tracking Fields](#system-and-tracking-fields)
+  - [Implementation Notes](#implementation-notes)
+    - [Data Types](#data-types)
+    - [Encryption](#encryption)
+    - [OTP System](#otp-system)
+    - [Immutable Fields](#immutable-fields)
+    - [Email Verification Status](#email-verification-status)
 
 ## User Information Fields
 

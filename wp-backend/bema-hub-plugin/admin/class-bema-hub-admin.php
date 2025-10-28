@@ -86,9 +86,22 @@ class Bema_Hub_Admin {
 	public function settings_page() {
 		// Determine the current active tab
 		$active_tab = isset( $_GET[ 'tab' ] ) ? $_GET[ 'tab' ] : 'general';
+		
+		// Check for settings update messages
+		$settings_updated = isset( $_GET[ 'settings-updated' ] ) ? $_GET[ 'settings-updated' ] : false;
 		?>
 		<div class="wrap">
 			<h2>Bema Hub Settings</h2>
+			
+			<?php if ( $settings_updated === 'true' ) : ?>
+				<div class="notice notice-success is-dismissible">
+					<p><strong>Settings saved successfully!</strong></p>
+				</div>
+			<?php elseif ( $settings_updated === 'false' ) : ?>
+				<div class="notice notice-error is-dismissible">
+					<p><strong>Error saving settings. Please try again.</strong></p>
+				</div>
+			<?php endif; ?>
 			
 			<h2 class="nav-tab-wrapper">
 				<a href="?page=bema-hub-settings&tab=general" class="nav-tab <?php echo $active_tab == 'general' ? 'nav-tab-active' : ''; ?>">General</a>
@@ -119,7 +132,7 @@ class Bema_Hub_Admin {
 	 */
 	public function register_email_settings() {
 		// Register a setting group named 'bema-hub-smtp-group' for the 'bema_hub_smtp_settings' option array
-		register_setting( 'bema-hub-smtp-group', 'bema_hub_smtp_settings' );
+		register_setting( 'bema-hub-smtp-group', 'bema_hub_smtp_settings', array($this, 'smtp_settings_validate') );
 
 		add_settings_section(
 			'bema-hub-smtp-main-section',
@@ -144,7 +157,7 @@ class Bema_Hub_Admin {
 	 */
 	public function register_otp_settings() {
 		// Register a setting group named 'bema-hub-otp-group' for the 'bema_hub_otp_settings' option array
-		register_setting( 'bema-hub-otp-group', 'bema_hub_otp_settings' );
+		register_setting( 'bema-hub-otp-group', 'bema_hub_otp_settings', array($this, 'otp_settings_validate') );
 
 		add_settings_section(
 			'bema-hub-otp-main-section',
@@ -279,6 +292,110 @@ class Bema_Hub_Admin {
 				echo '<p class="description">Delay in seconds before user can request new OTP (0-300 seconds)</p>';
 				break;
 		}
+	}
+
+	/**
+	 * Validate SMTP settings before saving
+	 *
+	 * @since    1.0.0
+	 */
+	public function smtp_settings_validate( $input ) {
+		// Validate SMTP port
+		if ( isset( $input['port'] ) ) {
+			$input['port'] = absint( $input['port'] );
+			if ( $input['port'] < 1 || $input['port'] > 65535 ) {
+				add_settings_error(
+					'bema_hub_smtp_settings',
+					'invalid_port',
+					'Invalid SMTP port. Please enter a port between 1 and 65535.',
+					'error'
+				);
+				return get_option( 'bema_hub_smtp_settings' ); // Return previous settings
+			}
+		}
+		
+		// Add success message
+		add_settings_error(
+			'bema_hub_smtp_settings',
+			'smtp_settings_updated',
+			'SMTP settings saved successfully!',
+			'updated'
+		);
+		
+		return $input;
+	}
+
+	/**
+	 * Validate OTP settings before saving
+	 *
+	 * @since    1.0.0
+	 */
+	public function otp_settings_validate( $input ) {
+		// Validate OTP expiry time
+		if ( isset( $input['expiry_time'] ) ) {
+			$input['expiry_time'] = absint( $input['expiry_time'] );
+			if ( $input['expiry_time'] < 1 || $input['expiry_time'] > 60 ) {
+				add_settings_error(
+					'bema_hub_otp_settings',
+					'invalid_expiry_time',
+					'Invalid OTP expiry time. Please enter a value between 1 and 60 minutes.',
+					'error'
+				);
+				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+			}
+		}
+		
+		// Validate OTP length
+		if ( isset( $input['length'] ) ) {
+			$input['length'] = absint( $input['length'] );
+			if ( $input['length'] < 4 || $input['length'] > 10 ) {
+				add_settings_error(
+					'bema_hub_otp_settings',
+					'invalid_length',
+					'Invalid OTP length. Please enter a value between 4 and 10 digits.',
+					'error'
+				);
+				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+			}
+		}
+		
+		// Validate max attempts
+		if ( isset( $input['max_attempts'] ) ) {
+			$input['max_attempts'] = absint( $input['max_attempts'] );
+			if ( $input['max_attempts'] < 1 || $input['max_attempts'] > 10 ) {
+				add_settings_error(
+					'bema_hub_otp_settings',
+					'invalid_max_attempts',
+					'Invalid max attempts. Please enter a value between 1 and 10 attempts.',
+					'error'
+				);
+				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+			}
+		}
+		
+		// Validate resend delay
+		if ( isset( $input['resend_delay'] ) ) {
+			$input['resend_delay'] = absint( $input['resend_delay'] );
+			if ( $input['resend_delay'] < 0 || $input['resend_delay'] > 300 ) {
+				add_settings_error(
+					'bema_hub_otp_settings',
+					'invalid_resend_delay',
+					'Invalid resend delay. Please enter a value between 0 and 300 seconds.',
+					'error'
+				);
+				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+			}
+		}
+		
+		// Add success message
+		add_settings_error(
+			'bema_hub_otp_settings',
+			'otp_settings_updated',
+			'OTP settings saved successfully!',
+			'updated'
+		);
+		
+		return $input;
 	}
 
 	/**
