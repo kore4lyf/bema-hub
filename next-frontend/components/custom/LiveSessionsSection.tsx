@@ -11,7 +11,7 @@ export function LiveSessionsSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [viewMode, setViewMode] = useState<'live' | 'upcoming' | 'recent'>('live');
 
-  const liveEvents = [
+  let liveEvents = [
     {
       title: "Live Album Recording",
       date: "Oct 26, 2024",
@@ -32,7 +32,7 @@ export function LiveSessionsSection() {
     }
   ];
 
-  const upcomingEvents = [
+  let upcomingEvents = [
     {
       title: "Acoustic Unplugged",
       date: "Nov 2, 2024",
@@ -62,7 +62,7 @@ export function LiveSessionsSection() {
     }
   ];
 
-  const pastEvents = [
+  let pastEvents = [
     {
       title: "October Highlights",
       date: "Oct 20, 2024",
@@ -106,7 +106,7 @@ export function LiveSessionsSection() {
   };
 
   const eventsToShow = getEventsToShow();
-  const showAsSlider = viewMode === 'live' && liveEvents.length > 1;
+  const showAsSlider = false //viewMode === 'live' && liveEvents.length > 1;
 
   useEffect(() => {
     if (liveEvents.length > 0) {
@@ -133,13 +133,13 @@ export function LiveSessionsSection() {
   return (
     <section className="py-20 bg-slate-900 text-white relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-900/30 to-pink-900/20"></div>
-      <div className="container px-4 sm:px-6 relative z-10">
+      <div className="container px-4 sm:px-6 relative z-10 mx-auto">
         <div className="text-center mb-16">
           <div className="flex justify-center gap-2 mb-6">
             <Button
-              variant={viewMode === 'live' ? 'default' : 'outline'}
+              variant={viewMode === 'live' && 'outline'}
               onClick={() => setViewMode('live')}
-              className={viewMode === 'live' ? 'bg-red-500 hover:bg-red-600' : 'border-white/20 text-white hover:bg-white/10'}
+              className={(viewMode === 'live' ? 'bg-red-600 hover:bg-red-500' : 'border-white/20 text-white hover:bg-white/10')}
               disabled={liveEvents.length === 0}
             >
               Live Events
@@ -156,13 +156,13 @@ export function LiveSessionsSection() {
               onClick={() => setViewMode('recent')}
               className={viewMode === 'recent' ? 'bg-gray-500 hover:bg-gray-600' : 'border-white/20 text-white hover:bg-white/10'}
             >
-              Last 3 Events
+              Past Events
             </Button>
           </div>
           
           <Badge variant="secondary" className="mb-4 px-4 py-2 bg-white/10 text-white border-white/20">
             <Radio className="h-4 w-4 mr-2" />
-            {viewMode === 'live' ? "Live Now" : viewMode === 'upcoming' ? "Upcoming Sessions" : "Recent Sessions"}
+            {viewMode === 'live' ? "Live Now" : viewMode === 'upcoming' ? "Upcoming Sessions" : "Previous Sessions"}
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Connect Live with <span className="text-blue-400">Bema Music</span>
@@ -217,29 +217,31 @@ export function LiveSessionsSection() {
               </CardContent>
             </Card>
 
-            <button 
-              onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            >
-              <ChevronLeft className="h-5 w-5 text-white" />
-            </button>
-            <button 
-              onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            >
-              <ChevronRight className="h-5 w-5 text-white" />
-            </button>
-
-            <div className="flex justify-center gap-2 mt-6">
-              {liveEvents.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentSlide ? 'bg-white' : 'bg-white/40'
-                  }`}
-                />
-              ))}
+            {/* Navigation controls with dots between arrows - Hero section style */}
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <button 
+                onClick={prevSlide}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5 text-white" />
+              </button>
+              <div className="flex gap-2">
+                {liveEvents.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === currentSlide ? 'bg-white' : 'bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
+              <button 
+                onClick={nextSlide}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <ChevronRight className="h-5 w-5 text-white" />
+              </button>
             </div>
           </div>
         ) : (
@@ -308,6 +310,19 @@ export function LiveSessionsSection() {
             ))}
           </div>
         )}
+
+      {(viewMode == "upcoming" && upcomingEvents < 1) && 
+        <div>
+          <p className="text-center text-2xl font-bold text-muted-foreground">No upcoming events.</p>
+        </div>
+      }
+
+      {(viewMode == "recent" && pastEvents < 1) &&
+        <div>
+          <p className="text-center text-2xl font-bold text-muted-foreground">No past events.</p>
+        </div>
+      }
+
       </div>
     </section>
   );

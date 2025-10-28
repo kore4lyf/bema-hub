@@ -17,7 +17,7 @@ export function CTASection() {
 
   return (
     <section className="py-20 bg-gradient-to-r from-blue-600 to-pink-700">
-      <div className="container px-4 sm:px-6">
+      <div className="container px-4 sm:px-6 mx-auto">
         <div className="mx-auto max-w-3xl text-center">
           <div className="flex justify-center mb-6">
             <div className="p-3 bg-white/10 rounded-full">

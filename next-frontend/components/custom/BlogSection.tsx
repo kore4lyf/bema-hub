@@ -8,7 +8,7 @@ export function BlogSection() {
   const blogPosts = [
     {
       title: "How Echo Loop Boosts Your Earnings",
-      excerpt: "Discover how our innovative system helps artists earn more directly from their fans.",
+      excerpt: "Discover how our innovative system helps artists earn more directly from their supporters.",
       image: "/placeholder.svg"
     },
     {
@@ -25,7 +25,7 @@ export function BlogSection() {
 
   return (
     <section className="py-20 bg-muted/30">
-      <div className="container px-4 sm:px-6">
+      <div className="container px-4 sm:px-6 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Latest from Bema Hub</h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">

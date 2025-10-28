@@ -22,9 +22,9 @@ export default function AuthLayout({
           <Link href="/" className="text-4xl font-bold block mb-8">
             Bema Hub
           </Link>
-          <h2 className="text-3xl font-bold mb-4">Your Creative Journey Starts Here</h2>
+          <h2 className="text-3xl font-bold mb-4">Join the Echo Loop</h2>
           <p className="text-lg opacity-90">
-            Discover opportunities, showcase your talent, and grow with a supportive community.
+            Connect directly with Bema Music through exclusive campaigns, live sessions, and our revolutionary referral ecosystem.
           </p>
         </div>
       </div>

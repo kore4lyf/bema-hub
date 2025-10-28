@@ -14,10 +14,6 @@ export interface SignupRequest {
   referred_by?: string
 }
 
-export interface ResendOtpRequest {
-  email: string
-}
-
 export interface VerifyOtpRequest {
   email: string
   otp_code: string
@@ -67,6 +63,10 @@ export interface UpdateProfileRequest {
   bema_state?: string
 }
 
+export interface ResendOtpRequest {
+  email: string
+}
+
 // Response interfaces
 export interface AuthResponse {
   success?: boolean
@@ -76,8 +76,90 @@ export interface AuthResponse {
   user_id?: number
   user_login?: string
   user_display_name?: string
+  first_name?: string
+  last_name?: string
   avatar_url?: string
   bema_email_verified?: boolean
+  bema_referred_by?: string
+  role?: string
+}
+
+export interface SignupResponse {
+  success: boolean
+  message: string
+  user_email: string
+  bema_email_verified: boolean
+  bema_referred_by: string
+  role: string
+}
+
+export interface VerifyOtpResponse {
+  success: boolean
+  message: string
+}
+
+export interface SigninResponse {
+  token: string
+  user_id: number
+  user_login: string
+  user_email: string
+  user_display_name: string
+  first_name: string
+  last_name: string
+  avatar_url: string
+  bema_email_verified: boolean
+  bema_referred_by: string
+  role: string
+}
+
+export interface SocialLoginResponse {
+  success: boolean
+  token: string
+  user_id: number
+  user_login: string
+  user_email: string
+  user_display_name: string
+  first_name: string
+  last_name: string
+  avatar_url: string
+  bema_email_verified: boolean
+  bema_referred_by: string
+  role: string
+}
+
+export interface SignoutResponse {
+  success: boolean
+  message: string
+}
+
+export interface ValidateTokenResponse {
+  valid: boolean
+  data?: {
+    user_id: number
+    user_login: string
+    user_email: string
+    first_name: string
+    last_name: string
+    avatar_url: string
+    bema_email_verified: boolean
+    bema_referred_by: string
+    role: string
+  }
+}
+
+export interface ResetPasswordRequestResponse {
+  success: boolean
+  message: string
+}
+
+export interface ResetPasswordVerifyResponse {
+  success: boolean
+  message: string
+}
+
+export interface ResetPasswordResponse {
+  success: boolean
+  message: string
 }
 
 export interface ProfileResponse {
@@ -103,15 +185,5 @@ export interface ProfileResponse {
   bema_google_id?: string
   bema_facebook_id?: string
   bema_twitter_id?: string
-}
-
-export interface ValidateTokenResponse {
-  valid: boolean
-  data?: {
-    user_id: number
-    user_login: string
-    user_email: string
-    avatar_url: string
-    bema_email_verified: boolean
-  }
-}
+  role: string
+}}

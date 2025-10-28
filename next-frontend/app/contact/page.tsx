@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mail, MapPin, Phone, Clock, Send } from "lucide-react";
 import { toast } from "sonner";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const contactInfo = [
   {
@@ -45,6 +46,14 @@ const departments = [
 ];
 
 export default function ContactPage() {
+  return (
+    <ProtectedRoute>
+      <ContactContent />
+    </ProtectedRoute>
+  );
+}
+
+function ContactContent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     toast.success("Message sent successfully! We'll get back to you soon.");
@@ -65,45 +74,7 @@ export default function ContactPage() {
 
         <div className="container max-w-7xl px-4 py-16 sm:px-6 mx-auto">
           <div className="grid lg:grid-cols-5 gap-16">
-            <div className="lg:col-span-2 space-y-12">
-              <div>
-                <h2 className="text-2xl font-bold mb-8">Contact Information</h2>
-                <div className="space-y-6">
-                  {contactInfo.map((item) => (
-                    <a
-                      key={item.title}
-                      href={item.link}
-                      className="flex items-start gap-4 group"
-                    >
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                        <item.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">{item.title}</p>
-                        <p className="font-medium group-hover:text-primary transition-colors">{item.value}</p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-4">Office Location</h3>
-                <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3305.4537534778894!2d-118.24532!3d34.05223!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDAzJzA4LjAiTiAxMTjCsDE0JzQzLjEiVw!5e0!3m2!1sen!2sus!4v1234567890"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Office Location"
-                  />
-                </div>
-              </div>
-            </div>
-
+            
             <div className="lg:col-span-3">
               <h2 className="text-2xl font-bold mb-8">Send us a Message</h2>
               
@@ -163,6 +134,45 @@ export default function ContactPage() {
                   Send Message
                 </Button>
               </form>
+            </div>
+            
+            <div className="lg:col-span-2 space-y-12">
+              <div>
+                <h2 className="text-2xl font-bold mb-8">Contact Information</h2>
+                <div className="space-y-6">
+                  {contactInfo.map((item) => (
+                    <a
+                      key={item.title}
+                      href={item.link}
+                      className="flex items-start gap-4 group"
+                    >
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <item.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">{item.title}</p>
+                        <p className="font-medium group-hover:text-primary transition-colors">{item.value}</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-4">Office Location</h3>
+                <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3305.4537534778894!2d-118.24532!3d34.05223!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDAzJzA4LjAiTiAxMTjCsDE0JzQzLjEiVw!5e0!3m2!1sen!2sus!4v1234567890"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Office Location"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -5,28 +5,28 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
-interface ProtectedRouteProps {
+interface GuestOnlyRouteProps {
   children: React.ReactNode;
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function GuestOnlyRoute({ children }: GuestOnlyRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, authData } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // If user is not authenticated, redirect to signin
-    if (!isAuthenticated) {
-      router.push("/signin");
+    // If user is authenticated, redirect to dashboard
+    if (isAuthenticated) {
+      router.push("/dashboard");
     }
   }, [isAuthenticated, router]);
 
   // Show loading state while checking auth
-  if (!isAuthenticated) {
+  if (isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="mt-4 text-sm text-muted-foreground">Checking authentication...</p>
+          <p className="mt-4 text-sm text-muted-foreground">Redirecting...</p>
         </div>
       </div>
     );

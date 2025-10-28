@@ -10,33 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Users, Calendar, Music, Crown, Star, Search, Filter, Radio, Mic } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-
-const liveCampaigns = [
-  {
-    slug: "live-album-recording",
-    title: "Live Album Recording Session",
-    description: "Join us for a live recording session of our upcoming album. Real-time participation and exclusive behind-the-scenes access.",
-    status: "Live Now",
-    participants: 1247,
-    endDate: "2025-10-26",
-    category: "Live Recording",
-    level: "All Members",
-    rewards: ["Live Access", "Recording Credits", "Exclusive Content"],
-    image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&q=80"
-  },
-  {
-    slug: "live-qa-session",
-    title: "Live Q&A with Bema Music",
-    description: "Ask your questions directly to the artists in this live interactive session. Pro and Ambassador members get priority.",
-    status: "Live Now",
-    participants: 892,
-    endDate: "2025-10-26",
-    category: "Interactive",
-    level: "Pro & Ambassador",
-    rewards: ["Direct Access", "Q&A Participation", "Exclusive Insights"],
-    image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80"
-  }
-];
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const campaigns = [
   {
@@ -109,13 +83,21 @@ const campaigns = [
 const categories = ["All", "Music Release", "Live Performance", "Collaboration", "Community", "Charity"];
 
 export default function CampaignsPage() {
+  return (
+    <ProtectedRoute>
+      <CampaignsContent />
+    </ProtectedRoute>
+  );
+}
+
+function CampaignsContent() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState("trending");
 
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <main className="min-h-screen bg-background">
         <div className="container max-w-7xl px-4 py-12 sm:px-6 mx-auto">
           <div className="mb-12 text-center">
             <Badge variant="secondary" className="mb-4 px-4 py-2">
@@ -129,53 +111,6 @@ export default function CampaignsPage() {
               Participate in exclusive Bema Music campaigns and unlock rewards through our community-driven initiatives
             </p>
           </div>
-
-          {liveCampaigns.length > 0 && (
-            <div className="mb-12">
-              <div className="flex items-center gap-2 mb-6">
-                <Radio className="h-5 w-5 text-red-500 animate-pulse" />
-                <h2 className="text-2xl font-bold">Live Campaigns</h2>
-                <Badge className="bg-red-500 animate-pulse">LIVE</Badge>
-              </div>
-              <div className="overflow-x-auto pb-4">
-                <div className="flex gap-6 min-w-max">
-                  {liveCampaigns.map((campaign) => (
-                    <Card key={campaign.slug} className="min-w-[400px] overflow-hidden bg-gradient-to-r from-red-600 to-pink-600 text-white hover:shadow-xl transition-all">
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <Badge className="bg-white/20 text-white animate-pulse">
-                            <Radio className="h-3 w-3 mr-1" />
-                            {campaign.status}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-sm">
-                            <Users className="h-4 w-4" />
-                            {campaign.participants.toLocaleString()}
-                          </div>
-                        </div>
-                        
-                        <h3 className="text-xl font-bold mb-2">{campaign.title}</h3>
-                        <p className="text-white/90 mb-4 text-sm">{campaign.description}</p>
-                        
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {campaign.rewards.slice(0, 2).map((reward, index) => (
-                            <Badge key={index} variant="secondary" className="bg-white/20 text-white text-xs">
-                              {reward}
-                            </Badge>
-                          ))}
-                        </div>
-                        
-                        <Link href={`/campaigns/${campaign.slug}`}>
-                          <Button className="w-full bg-white text-red-600 hover:bg-white/90">
-                            Join Live Campaign
-                          </Button>
-                        </Link>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="mb-6 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -273,22 +208,8 @@ export default function CampaignsPage() {
               </Card>
             ))}
           </div>
-
-          <div className="mt-12 text-center">
-            <Card className="p-8 bg-gradient-to-r from-blue-50 to-pink-50 dark:from-blue-950 dark:to-pink-950 border-blue-200 dark:border-blue-800">
-              <Music className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold mb-2">Become an Echo Loop Ambassador</h3>
-              <p className="text-muted-foreground mb-6">
-                Ready to take your Bema Music journey to the next level? Apply for Ambassador status and get direct access to the team.
-              </p>
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
-                Apply for Ambassador
-              </Button>
-            </Card>
-          </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

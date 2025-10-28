@@ -14,8 +14,17 @@ import { useDispatch } from "react-redux";
 import { useSigninMutation } from "@/lib/api/authApi";
 import { setCredentials } from "@/lib/features/auth/authSlice";
 import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from "@/components/auth/SocialLogin";
+import GuestOnlyRoute from "@/components/auth/GuestOnlyRoute";
 
 export default function SignInPage() {
+  return (
+    <GuestOnlyRoute>
+      <SignInContent />
+    </GuestOnlyRoute>
+  );
+}
+
+function SignInContent() {
   const router = useRouter();
   const dispatch = useDispatch();
   const [signIn, { isLoading }] = useSigninMutation();
@@ -33,17 +42,7 @@ export default function SignInPage() {
         password: formData.password,
       }).unwrap();
 
-      const user = {
-        id: String(result.user_id || ''),
-        email: result.user_email || formData.email,
-        name: result.user_display_name || result.user_login || formData.email,
-        username: result.user_login,
-        avatar_url: result.avatar_url,
-      };
-
       dispatch(setCredentials({
-        user,
-        token: result.token || '',
         authData: result
       }));
 
@@ -61,7 +60,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="grid place-content-center px-4 py-12 overflow-y-scroll">
+    <div className="grid place-content-center px-4 py-12 [&::-webkit-scrollbar]:w-0 overflow-y-scroll">
       <div className="w-full max-w-md space-y-8">
         <div>
           <h1 className="text-3xl font-bold">Welcome back</h1>

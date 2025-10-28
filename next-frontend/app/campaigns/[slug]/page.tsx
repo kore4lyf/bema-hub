@@ -37,6 +37,39 @@ const topParticipants = [
   { name: "Morgan L.", points: 1680, avatar: "ML" }
 ];
 
+const milestones = [
+  {
+    target: 500,
+    label: "Early Bird Milestone",
+    completed: true,
+    reward: "Exclusive badge + 50 bonus points"
+  },
+  {
+    target: 1000,
+    label: "Community Builder",
+    completed: true,
+    reward: "VIP Discord access + merchandise discount"
+  },
+  {
+    target: 2500,
+    label: "Momentum Maker",
+    completed: false,
+    reward: "Early access to premium content"
+  },
+  {
+    target: 5000,
+    label: "Champion Level",
+    completed: false,
+    reward: "Free VIP event tickets + meet & greet"
+  },
+  {
+    target: 10000,
+    label: "Legend Status",
+    completed: false,
+    reward: "Exclusive merchandise + backstage pass"
+  }
+];
+
 const faqs = [
   {
     question: "How do I participate?",
@@ -87,7 +120,7 @@ export default function CampaignDetailPage({ params }: { params: { slug: string 
                   Summer Music Festival 2025
                 </h1>
                 <p className="text-lg text-muted-foreground mb-6">
-                  Help us bring together artists and fans for the biggest music festival of the year.
+                  Help us bring together artists and supporters for the biggest music festival of the year.
                 </p>
                 
                 <div className="flex items-center gap-4 mb-6">

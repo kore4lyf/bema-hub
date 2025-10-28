@@ -12,8 +12,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Bema Hub - Connect, Create, Celebrate",
-  description: "Empower Artists and Fans with Echo Loop",
+  title: "Bema Hub",
+  description: "Bema Music empowering users with Echo Loop",
 };
 
 export default function RootLayout({

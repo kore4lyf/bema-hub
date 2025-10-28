@@ -1,27 +1,28 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { 
-  useSignInMutation, 
-  useRegisterUserMutation, 
-  useVerifyOTPMutation,
+  useSigninMutation, 
+  useSignupMutation, 
+  useVerifyOtpMutation,
   useSocialLoginMutation,
   useSignoutMutation,
-  useRequestPasswordResetMutation,
-  useVerifyResetOTPMutation,
-  useSetNewPasswordMutation
+  useResetPasswordRequestMutation,
+  useResetPasswordVerifyMutation,
+  useResetPasswordMutation
 } from '@/lib/api/authApi';
 import { 
   setCredentials, 
-  signOut, 
-  logout,
-  setPendingUserEmail,
-  setResetUserEmail,
-  setResetToken,
-  clearResetUserEmail,
-  clearResetToken
+  signOut as signOutAction, 
+  logout
 } from '@/lib/features/auth/authSlice';
 import { RootState } from '@/lib/store';
 import { toast } from 'sonner';
+import type {
+  SigninRequest,
+  VerifyOtpRequest,
+  ResetPasswordVerifyRequest,
+  ResetPasswordFinalRequest
+} from '@/lib/api/types';
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -29,26 +30,24 @@ export const useAuth = () => {
   const auth = useSelector((state: RootState) => state.auth);
 
   // RTK Query hooks
-  const [signInMutation, signInState] = useSignInMutation();
-  const [registerMutation, registerState] = useRegisterUserMutation();
-  const [verifyOTPMutation, verifyOTPState] = useVerifyOTPMutation();
+  const [signInMutation, signInState] = useSigninMutation();
+  const [registerMutation, registerState] = useSignupMutation();
+  const [verifyOTPMutation, verifyOTPState] = useVerifyOtpMutation();
   const [socialLoginMutation, socialLoginState] = useSocialLoginMutation();
   const [signoutMutation, signoutState] = useSignoutMutation();
-  const [requestResetMutation, requestResetState] = useRequestPasswordResetMutation();
-  const [verifyResetMutation, verifyResetState] = useVerifyResetOTPMutation();
-  const [setPasswordMutation, setPasswordState] = useSetNewPasswordMutation();
+  const [requestResetMutation, requestResetState] = useResetPasswordRequestMutation();
+  const [verifyResetMutation, verifyResetState] = useResetPasswordVerifyMutation();
+  const [setPasswordMutation, setPasswordState] = useResetPasswordMutation();
 
   // Unified auth methods
   const signIn = async (credentials: { email: string; password: string }) => {
     try {
-      const result = await signInMutation(credentials).unwrap();
+      const result = await signInMutation({
+        username: credentials.email,
+        password: credentials.password
+      } as SigninRequest).unwrap();
       dispatch(setCredentials({
-        user: {
-          id: result.user_id || '',
-          email: result.user_email || credentials.email,
-          name: result.user_display_name || result.user_nicename || credentials.email,
-        },
-        token: result.token
+        authData: result
       }));
       toast.success('Signed in successfully!');
       router.push('/dashboard');
@@ -62,7 +61,7 @@ export const useAuth = () => {
   const signUp = async (userData: any) => {
     try {
       const result = await registerMutation(userData).unwrap();
-      dispatch(setPendingUserEmail(userData.email));
+      dispatch(setCredentials({ authData: result }));
       toast.success('Registration successful! Please check your email for OTP.');
       return result;
     } catch (error: any) {
@@ -73,14 +72,12 @@ export const useAuth = () => {
 
   const verifyOTP = async (data: { email: string; otpCode: string }) => {
     try {
-      const result = await verifyOTPMutation(data).unwrap();
+      const result = await verifyOTPMutation({
+        email: data.email,
+        otp_code: data.otpCode
+      } as VerifyOtpRequest).unwrap();
       dispatch(setCredentials({
-        user: {
-          id: result.user_id || '',
-          email: result.user_email || data.email,
-          name: result.user_display_name || result.user_nicename || '',
-        },
-        token: result.token
+        authData: result
       }));
       toast.success('Email verified successfully!');
       router.push('/dashboard');
@@ -95,12 +92,7 @@ export const useAuth = () => {
     try {
       const result = await socialLoginMutation(providerData).unwrap();
       dispatch(setCredentials({
-        user: {
-          id: result.user_id || '',
-          email: result.user_email || providerData.email,
-          name: result.user_display_name || `${providerData.first_name} ${providerData.last_name}`,
-        },
-        token: result.token
+        authData: result
       }));
       toast.success('Social login successful!');
       router.push('/dashboard');
@@ -114,7 +106,7 @@ export const useAuth = () => {
   const signOut = async () => {
     try {
       await signoutMutation().unwrap();
-      dispatch(signOut());
+      dispatch(signOutAction());
       toast.success('Signed out successfully');
       router.push('/signin');
     } catch (error: any) {
@@ -127,7 +119,6 @@ export const useAuth = () => {
   const requestPasswordReset = async (email: string) => {
     try {
       await requestResetMutation({ email }).unwrap();
-      dispatch(setResetUserEmail(email));
       toast.success('Reset code sent to your email');
       return true;
     } catch (error: any) {
@@ -138,23 +129,25 @@ export const useAuth = () => {
 
   const verifyResetOTP = async (data: { email: string; otpCode: string }) => {
     try {
-      const result = await verifyResetMutation(data).unwrap();
-      if (result.reset_token) {
-        dispatch(setResetToken(result.reset_token));
-        toast.success('OTP verified successfully');
-        return result;
-      }
+      const result = await verifyResetMutation({
+        email: data.email,
+        otp_code: data.otpCode
+      } as ResetPasswordVerifyRequest).unwrap();
+      toast.success('OTP verified successfully');
+      return result;
     } catch (error: any) {
       toast.error(error.data?.message || 'Invalid OTP');
       throw error;
     }
   };
 
-  const setNewPassword = async (data: { token: string; newPassword: string }) => {
+  const setNewPassword = async (data: { email: string; otpCode: string; newPassword: string }) => {
     try {
-      await setPasswordMutation(data).unwrap();
-      dispatch(clearResetToken());
-      dispatch(clearResetUserEmail());
+      await setPasswordMutation({
+        email: data.email,
+        otp_code: data.otpCode,
+        new_password: data.newPassword
+      } as ResetPasswordFinalRequest).unwrap();
       toast.success('Password reset successfully');
       router.push('/signin');
       return true;
@@ -166,12 +159,8 @@ export const useAuth = () => {
 
   return {
     // State
-    user: auth.user,
-    token: auth.token,
+    authData: auth.authData,
     isAuthenticated: auth.isAuthenticated,
-    pendingUserEmail: auth.pendingUserEmail,
-    resetUserEmail: auth.resetUserEmail,
-    resetToken: auth.resetToken,
 
     // Loading states
     isSigningIn: signInState.isLoading,

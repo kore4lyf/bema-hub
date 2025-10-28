@@ -11,8 +11,16 @@ import type {
   ResetPasswordFinalRequest,
   UpdateProfileRequest,
   AuthResponse,
-  ProfileResponse,
-  ValidateTokenResponse
+  SignupResponse,
+  VerifyOtpResponse,
+  SigninResponse,
+  SocialLoginResponse,
+  SignoutResponse,
+  ValidateTokenResponse,
+  ResetPasswordRequestResponse,
+  ResetPasswordVerifyResponse,
+  ResetPasswordResponse,
+  ProfileResponse
 } from './types'
 
 export const authApi = createApi({
@@ -29,34 +37,34 @@ export const authApi = createApi({
   }),
   tagTypes: ['User', 'Profile'],
   endpoints: (builder) => ({
-    signup: builder.mutation<AuthResponse, SignupRequest>({
+    signup: builder.mutation<SignupResponse, SignupRequest>({
       query: (data) => ({ url: 'auth/signup', method: 'POST', body: data }),
     }),
-    verifyOtp: builder.mutation<AuthResponse, VerifyOtpRequest>({
+    verifyOtp: builder.mutation<VerifyOtpResponse, VerifyOtpRequest>({
       query: (data) => ({ url: 'auth/verify-otp', method: 'POST', body: data }),
     }),
-    resendOtp: builder.mutation<AuthResponse, ResendOtpRequest>({
+    resendOtp: builder.mutation<VerifyOtpResponse, ResendOtpRequest>({
       query: (data) => ({ url: 'auth/resend-otp', method: 'POST', body: data }),
     }),
-    signin: builder.mutation<AuthResponse, SigninRequest>({
+    signin: builder.mutation<SigninResponse, SigninRequest>({
       query: (data) => ({ url: 'auth/signin', method: 'POST', body: data }),
     }),
-    socialLogin: builder.mutation<AuthResponse, SocialLoginRequest>({
+    socialLogin: builder.mutation<SocialLoginResponse, SocialLoginRequest>({
       query: (data) => ({ url: 'auth/social-login', method: 'POST', body: data }),
     }),
-    signout: builder.mutation<AuthResponse, void>({
+    signout: builder.mutation<SignoutResponse, void>({
       query: () => ({ url: 'auth/signout', method: 'POST' }),
     }),
     validate: builder.mutation<ValidateTokenResponse, ValidateTokenRequest>({
       query: (data) => ({ url: 'auth/validate', method: 'POST', body: data }),
     }),
-    resetPasswordRequest: builder.mutation<AuthResponse, ResetPasswordRequestRequest>({
+    resetPasswordRequest: builder.mutation<ResetPasswordRequestResponse, ResetPasswordRequestRequest>({
       query: (data) => ({ url: 'auth/reset-password-request', method: 'POST', body: data }),
     }),
-    resetPasswordVerify: builder.mutation<AuthResponse, ResetPasswordVerifyRequest>({
+    resetPasswordVerify: builder.mutation<ResetPasswordVerifyResponse, ResetPasswordVerifyRequest>({
       query: (data) => ({ url: 'auth/reset-password-verify', method: 'POST', body: data }),
     }),
-    resetPassword: builder.mutation<AuthResponse, ResetPasswordFinalRequest>({
+    resetPassword: builder.mutation<ResetPasswordResponse, ResetPasswordFinalRequest>({
       query: (data) => ({ url: 'auth/reset-password', method: 'POST', body: data }),
     }),
     getProfile: builder.query<ProfileResponse, void>({

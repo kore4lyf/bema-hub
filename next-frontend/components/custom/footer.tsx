@@ -10,7 +10,7 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Bema Hub</h3>
             <p className="text-muted-foreground">
-              Empowering fans through direct community engagement.
+              Empowering supporters through direct community engagement.
             </p>
           </div>
           <div>

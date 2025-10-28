@@ -21,6 +21,7 @@ import {
   Mic
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const liveEvents = [
   {
@@ -110,6 +111,14 @@ const categories = [
 ];
 
 export default function EventsPage() {
+  return (
+    <ProtectedRoute>
+      <EventsContent />
+    </ProtectedRoute>
+  );
+}
+
+function EventsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -121,16 +130,15 @@ export default function EventsPage() {
     const matchesCategory = selectedCategory === "All" || event.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <main className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
         <div className="container py-12 px-4 sm:px-6 mx-auto">
           <div className="mb-12 text-center">
             <Badge variant="secondary" className="mb-4 px-4 py-2">
-              <Radio className="h-4 w-4 mr-2" />
-              Bema Music Live Sessions
-            </Badge>
+              <Radio className="h-4 w-4 mr-2" /> Live Sessions </Badge>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
               Connect Live with <span className="text-purple-600">Bema Music</span>
             </h1>
@@ -273,24 +281,26 @@ export default function EventsPage() {
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-purple-600" />
+                  <CardTitle>
                     Upcoming Sessions
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {liveEvents.filter(event => event.isUpcoming).slice(0, 3).map((event) => (
-                      <div key={event.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                        <div className="text-sm font-medium text-purple-600 min-w-[3rem]">
+                      <div key={event.id} className="flex items-center p-3 rounded-lg bg-muted/50">
+                        <div className="flex flex-col gap-2 items-center pr-3 mr-3  border-r border-gray-600  text-sm font-medium text-purple-600 min-w-[3rem]">
+                          <Calendar className="h-5 w-5 text-purple-600" />
                           {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
                         <div className="flex-1">
                           <h3 className="font-medium text-sm line-clamp-1">{event.title}</h3>
+                          <div className="flex justify-between items-end">
                           <p className="text-xs text-muted-foreground">{event.time}</p>
                           <Badge variant="outline" className="text-xs mt-1">
                             {event.level}
                           </Badge>
+                          </div>
                         </div>
                       </div>
                     ))}

@@ -5,22 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDispatch, useSelector } from "react-redux";
-import { useRequestPasswordResetMutation, useVerifyResetOTPMutation, useSetNewPasswordMutation } from "@/lib/api/authApi";
-import { setResetUserEmail, clearResetUserEmail } from "@/lib/features/auth/authSlice";
-import { RootState } from "@/lib/store";
+import { useResetPasswordRequestMutation, useResetPasswordVerifyMutation, useResetPasswordMutation } from "@/lib/api/authApi";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import GuestOnlyRoute from "@/components/auth/GuestOnlyRoute";
 
 export default function ResetPasswordPage() {
-  const dispatch = useDispatch();
+  return (
+    <GuestOnlyRoute>
+      <ResetPasswordContent />
+    </GuestOnlyRoute>
+  );
+}
+
+function ResetPasswordContent() {
   const router = useRouter();
-  const { resetUserEmail } = useSelector((state: RootState) => state.auth);
   
-  const [requestReset, { isLoading: isRequesting }] = useRequestPasswordResetMutation();
-  const [verifyOTP, { isLoading: isVerifying }] = useVerifyResetOTPMutation();
-  const [setNewPassword, { isLoading: isSetting }] = useSetNewPasswordMutation();
+  const [requestReset, { isLoading: isRequesting }] = useResetPasswordRequestMutation();
+  const [verifyOTP, { isLoading: isVerifying }] = useResetPasswordVerifyMutation();
+  const [setNewPassword, { isLoading: isSetting }] = useResetPasswordMutation();
   
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
@@ -33,7 +37,6 @@ export default function ResetPasswordPage() {
 
     try {
       await requestReset({ email }).unwrap();
-      dispatch(setResetUserEmail(email));
       toast.success("Reset code sent to your email");
       setStep(2);
     } catch (error: any) {
@@ -46,9 +49,8 @@ export default function ResetPasswordPage() {
 
     try {
       await verifyOTP({ 
-        email: resetUserEmail!, 
-        otpCode: otp,
-        purpose: 'password_reset'
+        email: email, 
+        otp_code: otp
       }).unwrap();
       
       toast.success("OTP verified successfully");
@@ -68,12 +70,10 @@ export default function ResetPasswordPage() {
 
     try {
       await setNewPassword({ 
-        email: resetUserEmail!,
-        otpCode: otp,
-        newPassword: password 
+        email: email,
+        otp_code: otp,
+        new_password: password 
       }).unwrap();
-      
-      dispatch(clearResetUserEmail());
       
       toast.success("Password reset successfully! Please sign in.");
       router.push("/signin");
@@ -116,7 +116,7 @@ export default function ResetPasswordPage() {
             {step === 2 && (
               <form onSubmit={handleVerifyOTP} className="space-y-4">
                 <p className="text-sm text-gray-600 text-center">
-                  Enter the verification code sent to {resetUserEmail}
+                  Enter the verification code sent to {email}
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="otp">Verification Code</Label>

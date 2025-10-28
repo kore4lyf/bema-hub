@@ -14,7 +14,7 @@ export function FeaturesSection() {
     {
       icon: TrendingUp,
       title: "Leaderboards",
-      description: "Compete with artists and fans, climb the ranks and showcase your engagement",
+      description: "Compete with artists and supporters, climb the ranks and showcase your engagement",
       color: "text-blue-500"
     },
     {
@@ -26,7 +26,7 @@ export function FeaturesSection() {
     {
       icon: Users,
       title: "Community Hub",
-      description: "Connect with like-minded fans and discover new artists in your network",
+      description: "Connect with like-minded supporters and discover new artists in your network",
       color: "text-purple-500"
     },
     {
@@ -45,7 +45,7 @@ export function FeaturesSection() {
 
   return (
     <section className="py-16 bg-muted/30">
-      <div className="container px-4 sm:px-6">
+      <div className="container px-4 sm:px-6 mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Why Choose Bema Hub?</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">

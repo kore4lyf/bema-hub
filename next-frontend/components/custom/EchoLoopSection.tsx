@@ -3,18 +3,16 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Crown, Star, Gift, Zap, Music } from "lucide-react";
+import { Users, Crown, Star, Gift, Zap, Music, Repeat } from "lucide-react";
 import Link from "next/link";
 
 export function EchoLoopSection() {
   return (
     <section className="py-20 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-      <div className="container px-4 sm:px-6">
+      <div className="container px-4 sm:px-6 mx-auto">
         <div className="text-center mb-16">
           <Badge variant="secondary" className="mb-4 px-4 py-2">
-            <Users className="h-4 w-4 mr-2" />
-            Echo Loop Referral System
-          </Badge>
+            <Repeat className="h-4 w-4 mr-2" /> Echo Loop </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Grow Together, <span className="text-blue-600">Earn Together</span>
           </h2>
@@ -133,14 +131,6 @@ export function EchoLoopSection() {
               </p>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="text-center">
-          <Link href="/signup">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
-              Start Your Echo Loop Journey
-            </Button>
-          </Link>
         </div>
       </div>
     </section>

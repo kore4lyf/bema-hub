@@ -11,14 +11,14 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Mail, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useSignupMutation } from "@/lib/api/authApi";
-import { setPendingUserEmail, setCredentials } from "@/lib/features/auth/authSlice";
+import { setCredentials } from "@/lib/features/auth/authSlice";
 import { useGetCountriesQuery, useGetStatesMutation, useGetDialCodeMutation } from "@/lib/api/locationApi";
 import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from "@/components/auth/SocialLogin";
-import { RootState } from "@/lib/store";
+import GuestOnlyRoute from "@/components/auth/GuestOnlyRoute";
 
 interface Country {
   name: string;
@@ -27,6 +27,14 @@ interface Country {
 }
 
 export default function SignUpPage() {
+  return (
+    <GuestOnlyRoute>
+      <SignUpContent />
+    </GuestOnlyRoute>
+  );
+}
+
+function SignUpContent() {
   const router = useRouter();
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
@@ -43,7 +51,7 @@ export default function SignUpPage() {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dialCode, setDialCode] = useState('');
-  
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -59,7 +67,6 @@ export default function SignUpPage() {
 
   // Only fetch countries once - RTK Query will cache this
   const { data: countries = [], isLoading: countriesLoading } = useGetCountriesQuery();
-  const { pendingUserEmail } = useSelector((state: RootState) => state.auth);
 
   // Memoized filtered countries for performance
   const filteredCountries = useMemo(() => {
@@ -68,8 +75,6 @@ export default function SignUpPage() {
       country.name.toLowerCase().includes(countrySearch.toLowerCase())
     );
   }, [countries, countrySearch]);
-
-
 
   // Memoized state fetcher to prevent unnecessary calls
   const fetchStatesForCountry = useCallback((country: string) => {
@@ -86,8 +91,8 @@ export default function SignUpPage() {
         const result = await getDialCode(country).unwrap();
         setDialCode(result.dial_code);
       } catch (err: any) {
-        console.error("Failed to fetch dial code:", err);
         setDialCode('');
+        toast.error("Failed to load country dial code. Please try again.");
       }
     }
   }, [getDialCode]);
@@ -99,8 +104,9 @@ export default function SignUpPage() {
 
   // Fetch dial code when country changes
   useEffect(() => {
-    console.log("Dial code effect triggered, country:", formData.country);
-    fetchDialCodeForCountry(formData.country);
+    if (formData.country) {
+      fetchDialCodeForCountry(formData.country);
+    }
   }, [formData.country, fetchDialCodeForCountry]);
 
   // Calculate password strength
@@ -157,7 +163,6 @@ export default function SignUpPage() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    console.log("Input changed:", field, value);
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear error when user starts typing
@@ -191,9 +196,9 @@ export default function SignUpPage() {
       }).unwrap();
 
       // Store signup response data in Redux (redux-persist handles localStorage)
-      dispatch(setPendingUserEmail(formData.email));
+      dispatch(setCredentials({ authData: result }));
       
-      toast.success("Registration successful! Please check your email for OTP.");
+      toast.success(result.message || "Registration successful! Please check your email for OTP.");
       
       // Redirect to verify route
       router.push('/signup/verify');
@@ -202,6 +207,34 @@ export default function SignUpPage() {
     }
   };
 
+  // Password strength indicator component
+  const PasswordStrengthIndicator = () => {
+    if (!formData.password) return null;
+    
+    const strengthLabels = ["Very Weak", "Weak", "Medium", "Strong"];
+    const strengthColors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-green-500"];
+    const strengthIndex = Math.min(passwordStrength, 3);
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex h-1.5 gap-1">
+          {[1, 2, 3, 4].map((level) => (
+            <div
+              key={level}
+              className={`flex-1 rounded-full ${
+                level <= passwordStrength
+                  ? strengthColors[strengthIndex]
+                  : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {strengthLabels[strengthIndex]}
+        </p>
+      </div>
+    );
+  };
 
   return (
     <div className="px-4 py-12 [&::-webkit-scrollbar]:w-0 overflow-y-scroll">
@@ -331,16 +364,16 @@ export default function SignUpPage() {
             
             <div className="space-y-2">
               <Label htmlFor="phoneNumber">Phone Number</Label>
-              <div className="flex gap-2">
+              <div className="flex">
                 <div className="w-16">
                   <Input
                     id="dialCode"
                     type="text"
                     value={dialCode}
                     readOnly
-                    placeholder="+234"
+                    placeholder="+1"
                     disabled={true}
-                    className="text-center"
+                    className="text-center border-r-0 rounded-r-none"
                   />
                 </div>
                 <Input
@@ -349,7 +382,7 @@ export default function SignUpPage() {
                   placeholder="Enter your phone number"
                   value={formData.phoneNumber}
                   onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                  className="flex-1"
+                  className="flex-1 border-l-0 rounded-l-none"
                 />
               </div>
             </div>
@@ -379,33 +412,7 @@ export default function SignUpPage() {
                   )}
                 </Button>
               </div>
-              {formData.password && (
-                <div className="space-y-1">
-                  <div className="flex h-1.5 gap-1">
-                    {[1, 2, 3, 4].map((level) => (
-                      <div
-                        key={level}
-                        className={`flex-1 rounded-full ${
-                          level <= passwordStrength
-                            ? passwordStrength < 3
-                              ? "bg-red-500"
-                              : passwordStrength < 4
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
-                            : "bg-muted"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {passwordStrength < 2
-                      ? "Weak password"
-                      : passwordStrength < 4
-                      ? "Medium password"
-                      : "Strong password"}
-                  </p>
-                </div>
-              )}
+              <PasswordStrengthIndicator />
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
 

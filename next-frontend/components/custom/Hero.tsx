@@ -59,46 +59,38 @@ export function Hero() {
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto mb-12">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="p-4">
               <Radio className="h-8 w-8 text-blue-400 mx-auto mb-2" />
               <p className="text-white/90 font-medium">Live Sessions</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="p-4">
               <Users2 className="h-8 w-8 text-green-400 mx-auto mb-2" />
               <p className="text-white/90 font-medium">Campaigns</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="p-4">
               <Crown className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
               <p className="text-white/90 font-medium">Ambassador</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="p-4">
               <Music className="h-8 w-8 text-purple-400 mx-auto mb-2" />
               <p className="text-white/90 font-medium">Pro Access</p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            {isAuthenticated ? (
-              <Link href="/dashboard">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 py-3 text-lg">
-                  Enter Echo Loop
-                </Button>
-              </Link>
-            ) : (
+          <div className="flex flex-row gap-4 justify-center mb-8">
               <Link href="/signup">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 py-3 text-lg">
                   Sign Up
                 </Button>
               </Link>
-            )}
-            <Link href="/campaigns">
+            <Link href="/signin">
               <Button size="lg" variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20 px-8 py-3 text-lg backdrop-blur-sm">
-                View Campaigns
+                Sign In
               </Button>
             </Link>
           </div>
 
-          <div className="flex items-center justify-center gap-4">
+          {/* <div className="flex items-center justify-center gap-4">
             <button onClick={prevSlide} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
               <ChevronLeft className="h-5 w-5 text-white" />
             </button>
@@ -116,7 +108,7 @@ export function Hero() {
             <button onClick={nextSlide} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
               <ChevronRight className="h-5 w-5 text-white" />
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </section>

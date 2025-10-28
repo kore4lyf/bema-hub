@@ -9,7 +9,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 export function ContactSection() {
   return (
     <section className="py-20">
-      <div className="container px-4 sm:px-6">
+      <div className="container px-4 sm:px-6 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Get in Touch</h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -52,14 +52,14 @@ export function ContactSection() {
                     <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Email</p>
-                      <p className="text-muted-foreground">support@bemahub.com</p>
+                      <p className="text-muted-foreground">bemamarketing@bemamusic.com</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Phone</p>
-                      <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                      <p className="text-muted-foreground">+2 (555) 123-4567</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
