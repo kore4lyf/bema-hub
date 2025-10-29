@@ -141,10 +141,6 @@ export default function BlogPage() {
       <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
         <div className="container py-12 px-4 sm:px-6 mx-auto">
           <div className="mb-12 text-center">
-            <Badge variant="secondary" className="mb-4 px-4 py-2">
-              <Music className="h-4 w-4 mr-2" />
-              Bema Music Blog
-            </Badge>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
               Stories from the <span className="text-purple-600">Echo Loop</span>
             </h1>

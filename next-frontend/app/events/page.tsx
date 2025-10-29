@@ -93,7 +93,7 @@ const liveEvents = [
     location: "Welcome Stream",
     attendees: 156,
     isLive: false,
-    isUpcoming: true,
+    isUpcoming: false,
     category: "Education",
     level: "New Members",
     tags: ["Onboarding", "Introduction", "Echo Loop"],
@@ -137,8 +137,6 @@ function EventsContent() {
       <main className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
         <div className="container py-12 px-4 sm:px-6 mx-auto">
           <div className="mb-12 text-center">
-            <Badge variant="secondary" className="mb-4 px-4 py-2">
-              <Radio className="h-4 w-4 mr-2" /> Live Sessions </Badge>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
               Connect Live with <span className="text-purple-600">Bema Music</span>
             </h1>
@@ -163,7 +161,7 @@ function EventsContent() {
             <div className="lg:col-span-2 space-y-6">
               {filteredEvents.map((event) => (
                 <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="grid md:grid-cols-3 gap-6">
+                  <div className="grid md:grid-cols-3 gap-3">
                     <div className="aspect-video md:aspect-auto overflow-hidden bg-muted">
                       <img src={event.image} alt={event.title} className="h-full w-full object-cover" />
                     </div>
@@ -242,7 +240,7 @@ function EventsContent() {
                               Session Ended
                             </Button>
                           )}
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline">
                             <Share2 className="mr-2 h-4 w-4" />
                             Share
                           </Button>

@@ -1,112 +1,145 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Radio, Calendar, Users, Play, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Radio, Calendar, Users, Play, Clock, ChevronLeft, ChevronRight, Share2, Crown, Star } from "lucide-react";
 import { useState, useEffect } from "react";
-import Image from "next/image";
 
 export function LiveSessionsSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [viewMode, setViewMode] = useState<'live' | 'upcoming' | 'recent'>('live');
 
-  let liveEvents = [
+  interface Event {
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    location: string;
+    attendees: number;
+    isLive: boolean;
+    isUpcoming: boolean;
+    category: string;
+    level: string;
+    tags: string[];
+    image: string;
+  }
+
+  const liveEvents: Event[] = [
     {
-      title: "Live Album Recording",
-      date: "Oct 26, 2024",
-      time: "9:00 PM EST",
-      type: "Live Recording",
-      participants: 1247,
-      status: "live",
-      image: "/api/placeholder/400/200"
-    },
-    {
-      title: "Live Q&A Session",
-      date: "Oct 26, 2024",
-      time: "10:00 PM EST",
-      type: "Interactive",
-      participants: 892,
-      status: "live",
-      image: "/api/placeholder/400/200"
+      id: 1,
+      title: "Bema Music Acoustic Live",
+      description: "Intimate acoustic performance featuring new tracks from the upcoming album. Direct interaction with the artist and exclusive Q&A session.",
+      date: "2025-10-26",
+      time: "8:00 PM EST",
+      location: "Live Stream",
+      attendees: 1247,
+      isLive: true,
+      isUpcoming: false,
+      category: "Live Performance",
+      level: "All Members",
+      tags: ["Acoustic", "New Music", "Q&A"],
+      image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&q=80"
     }
   ];
 
-  let upcomingEvents = [
+  const upcomingEvents: Event[] = [
     {
-      title: "Acoustic Unplugged",
-      date: "Nov 2, 2024",
-      time: "8:00 PM EST",
-      type: "Live Performance",
-      participants: 234,
-      status: "upcoming",
-      image: "/api/placeholder/400/200"
+      id: 3,
+      title: "Behind the Scenes: Studio Session",
+      description: "Get an exclusive look into the creative process as Bema Music works on new material. Watch the magic happen in real-time and ask questions about the songwriting process.",
+      date: "2025-11-08",
+      time: "6:00 PM EST",
+      location: "Studio Live Stream",
+      attendees: 892,
+      isLive: false,
+      isUpcoming: true,
+      category: "Studio Session",
+      level: "Pro & Ambassador",
+      tags: ["Studio", "Creative Process", "Exclusive"],
+      image: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80"
     },
     {
-      title: "Behind the Beat",
-      date: "Nov 5, 2024", 
+      id: 2,
+      title: "Echo Loop Ambassador Meetup",
+      description: "Exclusive gathering for Echo Loop Ambassadors. Network with fellow ambassadors, get updates on upcoming campaigns, and provide feedback directly to the Bema Music team.",
+      date: "2025-11-02",
       time: "7:00 PM EST",
-      type: "Studio Session",
-      participants: 156,
-      status: "upcoming",
-      image: "/api/placeholder/400/200"
+      location: "Private Stream",
+      attendees: 45,
+      isLive: true,
+      isUpcoming: true,
+      category: "Community",
+      level: "Ambassador Only",
+      tags: ["Ambassador", "Networking", "Exclusive"],
+      image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80"
     },
     {
-      title: "Fan Q&A Session",
-      date: "Nov 8, 2024",
-      time: "6:00 PM EST", 
-      type: "Interactive",
-      participants: 89,
-      status: "pro-only",
-      image: "/api/placeholder/400/200"
+      id: 2,
+      title: "Echo Loop Ambassador Meetup",
+      description: "Exclusive gathering for Echo Loop Ambassadors. Network with fellow ambassadors, get updates on upcoming campaigns, and provide feedback directly to the Bema Music team.",
+      date: "2025-11-02",
+      time: "7:00 PM EST",
+      location: "Private Stream",
+      attendees: 45,
+      isLive: true,
+      isUpcoming: true,
+      category: "Community",
+      level: "Ambassador Only",
+      tags: ["Ambassador", "Networking", "Exclusive"],
+      image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80"
     }
   ];
 
-  let pastEvents = [
+  const pastEvents: Event[] = [
     {
-      title: "October Highlights",
-      date: "Oct 20, 2024",
-      time: "8:00 PM EST",
-      type: "Recap Session",
-      participants: 567,
-      status: "past",
-      image: "/api/placeholder/400/200"
+      id: 4,
+      title: "Fan Spotlight Session",
+      description: "Monthly session where Echo Loop members can showcase their own music and get feedback from Bema Music. Open to all levels with priority given to Pro and Ambassador members.",
+      date: "2025-11-15",
+      time: "7:30 PM EST",
+      location: "Community Stream",
+      attendees: 234,
+      isLive: false,
+      isUpcoming: true,
+      category: "Community Showcase",
+      level: "All Members",
+      tags: ["Fan Music", "Feedback", "Showcase"],
+      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80"
     },
     {
-      title: "Studio Tour",
-      date: "Oct 15, 2024",
-      time: "7:00 PM EST",
-      type: "Behind the Scenes",
-      participants: 423,
-      status: "past",
-      image: "/api/placeholder/400/200"
-    },
-    {
-      title: "Community Showcase",
-      date: "Oct 10, 2024",
-      time: "6:30 PM EST",
-      type: "Fan Content",
-      participants: 312,
-      status: "past",
-      image: "/api/placeholder/400/200"
+      id: 5,
+      title: "Echo Loop Onboarding Session",
+      description: "New to the Echo Loop? Join this comprehensive introduction to the Bema Music community, learn about referral benefits, and discover how to maximize your experience.",
+      date: "2025-11-22",
+      time: "5:00 PM EST",
+      location: "Welcome Stream",
+      attendees: 156,
+      isLive: false,
+      isUpcoming: false,
+      category: "Education",
+      level: "New Members",
+      tags: ["Onboarding", "Introduction", "Echo Loop"],
+      image: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80"
     }
   ];
 
   const getEventsToShow = () => {
     switch (viewMode) {
       case 'live':
-        return liveEvents.length > 0 ? liveEvents : [];
+        return liveEvents;
       case 'upcoming':
-        return upcomingEvents;
+        return upcomingEvents.slice(0, 2);
       case 'recent':
-        return pastEvents.slice(0, 3);
+        return pastEvents.slice(0, 2);
       default:
         return [];
     }
   };
 
   const eventsToShow = getEventsToShow();
-  const showAsSlider = false //viewMode === 'live' && liveEvents.length > 1;
+  const showAsSlider = viewMode === 'live' && liveEvents.length > 1;
 
   useEffect(() => {
     if (liveEvents.length > 0) {
@@ -130,6 +163,98 @@ export function LiveSessionsSection() {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % liveEvents.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + liveEvents.length) % liveEvents.length);
 
+  const renderEventCard = (event: any) => (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow w-full">
+      <div className={viewMode === 'live' ? "grid md:grid-cols-3 gap-3" : "flex flex-col gap-3"}>
+        <div className="aspect-ratio w-full overflow-hidden bg-muted">
+          <img src={event.image} alt={event.title} className="h-full w-full object-cover" />
+        </div>
+        <div className="md:col-span-2 p-6">
+          <CardHeader className="p-0 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{event.category}</Badge>
+                {event.isLive && (
+                  <Badge className="bg-red-500 hover:bg-red-500 animate-pulse">
+                    <Radio className="h-3 w-3 mr-1" />
+                    LIVE NOW
+                  </Badge>
+                )}
+                {event.level === "Ambassador Only" && (
+                  <Badge className="bg-yellow-600">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Ambassador
+                  </Badge>
+                )}
+                {event.level === "Pro & Ambassador" && (
+                  <Badge className="bg-blue-600">
+                    <Star className="h-3 w-3 mr-1" />
+                    Pro+
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <CardTitle className="text-xl mb-2">{event.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <p className="text-muted-foreground mb-4 text-sm">
+              {event.description}
+            </p>
+            
+            <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+              <div className="flex items-center">
+                <Calendar className="mr-2 h-4 w-4 text-purple-600" />
+                <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              </div>
+              <div className="flex items-center">
+                <Clock className="mr-2 h-4 w-4 text-purple-600" />
+                <span>{event.time}</span>
+              </div>
+              <div className="flex items-center">
+                <Radio className="mr-2 h-4 w-4 text-purple-600" />
+                <span>{event.location}</span>
+              </div>
+              <div className="flex items-center">
+                <Users className="mr-2 h-4 w-4 text-purple-600" />
+                <span>{event.attendees} {event.isLive ? 'watching' : 'registered'}</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-1 mb-4">
+              {event.tags.map((tag: string, index: number) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {event.isLive ? (
+                <Button className="bg-red-500 hover:bg-red-600 text-white">
+                  <Play className="mr-2 h-4 w-4" />
+                  Join Live Now
+                </Button>
+              ) : event.isUpcoming ? (
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  RSVP
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
+                  Session Ended
+                </Button>
+              )}
+              <Button variant="outline">
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </Button>
+            </div>
+          </CardContent>
+        </div>
+      </div>
+    </Card>
+  );
+
   return (
     <section className="py-20 bg-slate-900 text-white relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-900/30 to-pink-900/20"></div>
@@ -137,33 +262,30 @@ export function LiveSessionsSection() {
         <div className="text-center mb-16">
           <div className="flex justify-center gap-2 mb-6">
             <Button
-              variant={viewMode === 'live' && 'outline'}
+              variant={viewMode === 'live' ? "default" : "outline"}
               onClick={() => setViewMode('live')}
-              className={(viewMode === 'live' ? 'bg-red-600 hover:bg-red-500' : 'border-white/20 text-white hover:bg-white/10')}
+              className={viewMode === 'live' ? 'bg-gray-500 hover:bg-gray-600 text-white hover:text-white' : 'text-white hover:bg-white/10 hover:text-white bg-transparent border-0'}
               disabled={liveEvents.length === 0}
             >
               Live Events
             </Button>
             <Button
-              variant={viewMode === 'upcoming' ? 'default' : 'outline'}
+              variant={viewMode === 'upcoming' ? "default" : "outline"}
               onClick={() => setViewMode('upcoming')}
-              className={viewMode === 'upcoming' ? 'bg-blue-500 hover:bg-blue-600' : 'border-white/20 text-white hover:bg-white/10'}
+              className={viewMode === 'upcoming' ? 'bg-gray-500 hover:bg-gray-600 text-white hover:text-white' : 'text-white hover:bg-white/10 hover:text-white bg-transparent border-0'}
+              disabled={upcomingEvents.length === 0}
             >
               Upcoming Events
             </Button>
             <Button
-              variant={viewMode === 'recent' ? 'default' : 'outline'}
+              variant={viewMode === 'recent' ? "default" : "outline"}
               onClick={() => setViewMode('recent')}
-              className={viewMode === 'recent' ? 'bg-gray-500 hover:bg-gray-600' : 'border-white/20 text-white hover:bg-white/10'}
+              className={viewMode === 'recent' ? 'bg-gray-500 hover:bg-gray-600 text-white hover:text-white' : 'text-white hover:bg-white/10 hover:text-white bg-transparent border-0'}
             >
               Past Events
             </Button>
           </div>
           
-          <Badge variant="secondary" className="mb-4 px-4 py-2 bg-white/10 text-white border-white/20">
-            <Radio className="h-4 w-4 mr-2" />
-            {viewMode === 'live' ? "Live Now" : viewMode === 'upcoming' ? "Upcoming Sessions" : "Previous Sessions"}
-          </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Connect Live with <span className="text-blue-400">Bema Music</span>
           </h2>
@@ -173,156 +295,64 @@ export function LiveSessionsSection() {
           </p>
         </div>
 
-        {showAsSlider ? (
-          <div className="relative max-w-2xl mx-auto">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white shadow-lg">
-              <div className="relative h-48 w-full">
-                <Image
-                  src={liveEvents[currentSlide].image}
-                  alt={liveEvents[currentSlide].title}
-                  fill
-                  className="object-cover rounded-t-lg"
-                />
-              </div>
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge className="bg-red-500 hover:bg-red-500 animate-pulse">
-                    <Radio className="h-3 w-3 mr-1" />
-                    LIVE NOW
-                  </Badge>
-                  <div className="flex items-center gap-1 text-sm text-white/60">
-                    <Users className="h-4 w-4" />
-                    {liveEvents[currentSlide].participants.toLocaleString()}
-                  </div>
+        {eventsToShow.length > 0 ? (
+          viewMode === 'live' && showAsSlider ? (
+            <div className="relative max-w-6xl mx-auto">
+              {renderEventCard(liveEvents[currentSlide])}
+              
+              {/* Navigation controls with dots between arrows - Hero section style */}
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button 
+                  onClick={prevSlide}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  disabled={liveEvents.length <= 1}
+                >
+                  <ChevronLeft className="h-5 w-5 text-white" />
+                </button>
+                <div className="flex gap-2">
+                  {liveEvents.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === currentSlide ? 'bg-white' : 'bg-white/40'
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
                 </div>
-                
-                <h3 className="text-2xl font-bold mb-2">{liveEvents[currentSlide].title}</h3>
-                <p className="text-white/60 mb-6">{liveEvents[currentSlide].type}</p>
-                
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-blue-400" />
-                    {liveEvents[currentSlide].date}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-blue-400" />
-                    {liveEvents[currentSlide].time}
-                  </div>
-                </div>
-                
-                <Button className="w-full bg-red-500 hover:bg-red-600 border-0 text-white">
-                  <Play className="h-4 w-4 mr-2" />
-                  Join Live Now
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Navigation controls with dots between arrows - Hero section style */}
-            <div className="flex items-center justify-center gap-4 mt-6">
-              <button 
-                onClick={prevSlide}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              >
-                <ChevronLeft className="h-5 w-5 text-white" />
-              </button>
-              <div className="flex gap-2">
-                {liveEvents.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentSlide ? 'bg-white' : 'bg-white/40'
-                    }`}
-                  />
-                ))}
+                <button 
+                  onClick={nextSlide}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  disabled={liveEvents.length <= 1}
+                >
+                  <ChevronRight className="h-5 w-5 text-white" />
+                </button>
               </div>
-              <button 
-                onClick={nextSlide}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              >
-                <ChevronRight className="h-5 w-5 text-white" />
-              </button>
             </div>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {eventsToShow.map((event, index) => (
-              <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 text-white shadow-lg hover:shadow-xl transition-shadow">
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={event.image}
-                    alt={event.title}
-                    fill
-                    className="object-cover rounded-t-lg"
-                  />
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+              {eventsToShow.map((event) => (
+                <div key={event.id} className="h-full">
+                  {renderEventCard(event)}
                 </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge 
-                      variant={event.status === 'pro-only' ? 'default' : 'secondary'}
-                      className={
-                        event.status === 'live' ? 'bg-red-500 hover:bg-red-500 animate-pulse' :
-                        event.status === 'pro-only' ? 'bg-yellow-600 hover:bg-yellow-700' : 
-                        event.status === 'past' ? 'bg-gray-600 hover:bg-gray-700' :
-                        'bg-blue-600 hover:bg-blue-700'
-                      }
-                    >
-                      {event.status === 'live' && <Radio className="h-3 w-3 mr-1" />}
-                      {event.status === 'live' ? 'LIVE' : 
-                       event.status === 'pro-only' ? 'Pro Only' : 
-                       event.status === 'past' ? 'Replay' : 'Open'}
-                    </Badge>
-                    <div className="flex items-center gap-1 text-sm text-white/60">
-                      <Users className="h-4 w-4" />
-                      {event.participants}
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold mb-2">{event.title}</h3>
-                  <p className="text-white/60 mb-4">{event.type}</p>
-                  
-                  <div className="space-y-2 mb-6">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-blue-400" />
-                      {event.date}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-blue-400" />
-                      {event.time}
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    className={`w-full border-0 text-white ${
-                      event.status === 'live' ? 'bg-red-500 hover:bg-red-600' :
-                      event.status === 'past' ? 'bg-gray-600 hover:bg-gray-700' :
-                      'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                    disabled={event.status === 'pro-only'}
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    {event.status === 'live' ? 'Join Live' :
-                     event.status === 'past' ? 'Watch Replay' :
-                     event.status === 'pro-only' ? 'Upgrade to Join' : 'Join Session'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-2xl font-bold text-white/80">
+              {viewMode === 'live' && "No live events currently."}
+              {viewMode === 'upcoming' && "No upcoming events scheduled."}
+              {viewMode === 'recent' && "No past events available."}
+            </p>
+            <p className="text-white/60 mt-2">
+              {viewMode === 'live' && "Check back later for live sessions."}
+              {viewMode === 'upcoming' && "Stay tuned for upcoming events."}
+              {viewMode === 'recent' && "No recent events to display."}
+            </p>
           </div>
         )}
-
-      {(viewMode == "upcoming" && upcomingEvents < 1) && 
-        <div>
-          <p className="text-center text-2xl font-bold text-muted-foreground">No upcoming events.</p>
-        </div>
-      }
-
-      {(viewMode == "recent" && pastEvents < 1) &&
-        <div>
-          <p className="text-center text-2xl font-bold text-muted-foreground">No past events.</p>
-        </div>
-      }
-
       </div>
     </section>
   );
