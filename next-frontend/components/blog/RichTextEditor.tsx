@@ -17,7 +17,7 @@ import {
   ImageIcon,
   Link as LinkIcon
 } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 interface RichTextEditorProps {
   content: string;
@@ -29,16 +29,19 @@ interface RichTextEditorProps {
 export function RichTextEditor({ 
   content, 
   onChange, 
-  placeholder = "Start writing your blog post...",
+  placeholder = "Start writing...",
   onImageUpload 
 }: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Image.configure({
         HTMLAttributes: {
-          class: 'rounded-lg max-w-full h-auto',
+          class: 'rounded-lg max-w-full h-auto my-4',
         },
+        allowBase64: true,
       }),
       Link.configure({
         openOnClick: false,
@@ -55,26 +58,76 @@ export function RichTextEditor({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    editorProps: {
+      handleDrop: (view, event, slice, moved) => {
+        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+          const file = event.dataTransfer.files[0];
+          if (file.type.includes('image/') && onImageUpload) {
+            event.preventDefault();
+            
+            // Get drop position
+            const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+            if (!coordinates) return false;
+
+            // Upload and insert image
+            onImageUpload(file).then((url) => {
+              const { schema } = view.state;
+              const node = schema.nodes.image.create({ src: url });
+              const transaction = view.state.tr.insert(coordinates.pos, node);
+              view.dispatch(transaction);
+            }).catch((error) => {
+              console.error('Failed to upload image:', error);
+            });
+            
+            return true;
+          }
+        }
+        return false;
+      },
+      handlePaste: (view, event, slice) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        const imageItem = items.find(item => item.type.includes('image/'));
+        
+        if (imageItem && onImageUpload) {
+          event.preventDefault();
+          const file = imageItem.getAsFile();
+          if (file) {
+            onImageUpload(file).then((url) => {
+              const { schema } = view.state;
+              const node = schema.nodes.image.create({ src: url });
+              const transaction = view.state.tr.replaceSelectionWith(node);
+              view.dispatch(transaction);
+            }).catch((error) => {
+              console.error('Failed to upload image:', error);
+            });
+          }
+          return true;
+        }
+        return false;
+      },
+    },
   });
 
-  const addImage = useCallback(async () => {
-    if (!onImageUpload) return;
-    
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        try {
-          const url = await onImageUpload(file);
-          editor?.chain().focus().setImage({ src: url }).run();
-        } catch (error) {
-          console.error('Failed to upload image:', error);
-        }
+  const addImage = useCallback(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, []);
+
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && onImageUpload) {
+      try {
+        const url = await onImageUpload(file);
+        editor?.chain().focus().setImage({ src: url }).run();
+      } catch (error) {
+        console.error('Failed to upload image:', error);
       }
-    };
-    input.click();
+    }
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   }, [editor, onImageUpload]);
 
   const addLink = useCallback(() => {
@@ -87,8 +140,8 @@ export function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="border-b p-2 flex flex-wrap gap-1">
+    <div className="border rounded-md overflow-hidden">
+      <div className="border-b p-2 flex flex-wrap gap-1 bg-muted/50">
         <Button
           variant="ghost"
           size="sm"
@@ -164,9 +217,23 @@ export function RichTextEditor({
           <Redo className="h-4 w-4" />
         </Button>
       </div>
-      <EditorContent 
-        editor={editor} 
-        className="prose prose-sm max-w-none p-4 min-h-[300px] focus:outline-none"
+      
+      <div className="relative">
+        <EditorContent 
+          editor={editor} 
+          className="prose prose-sm max-w-none p-4 min-h-[400px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px]"
+        />
+        <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+          Drag images here or paste from clipboard
+        </div>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
       />
     </div>
   );

@@ -9,7 +9,7 @@ import { TestimonialsSection } from "@/components/custom/TestimonialsSection";
 import { FAQSection } from "@/components/custom/FAQSection";
 import { CTASection } from "@/components/custom/CTASection";
 import { ContactSection } from "@/components/custom/ContactSection";
-import { Footer } from "@/components/custom/footer";
+import { Footer } from "@/components/custom/Footer";
 
 export default function Home() {
   return (

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Navbar } from "@/components/custom/Navbar";
-import { Footer } from "@/components/custom/footer";
+import { Footer } from "@/components/custom/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

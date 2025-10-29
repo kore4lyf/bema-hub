@@ -42,7 +42,7 @@ export function Hero() {
     <section className={`relative overflow-hidden py-24 md:py-32 bg-gradient-to-br ${heroSlides[currentSlide].gradient} transition-all duration-1000`}>
       <div className="absolute inset-0 opacity-40"></div>
       
-      <div className="container relative z-10 px-4 sm:px-6">
+      <div className="container relative z-10 px-4 sm:px-6 mx-auto">
         <div className="mx-auto max-w-5xl text-center">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
             {heroSlides[currentSlide].title.includes("Echo Loop") ? (

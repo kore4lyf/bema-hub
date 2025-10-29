@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/custom/Navbar';
-import { Footer } from '@/components/custom/footer';
+import { Footer } from '@/components/custom/Footer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,187 +106,191 @@ export default function CreateBlogPost() {
     <>
       <Navbar />
       <main className="min-h-screen bg-background">
-        <div className="container py-8 px-4 sm:px-6 mx-auto max-w-4xl">
-          <div className="mb-8">
-            <Link href="/blog">
-              <Button variant="ghost" className="mb-4">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Blog
-              </Button>
-            </Link>
-            <h1 className="text-3xl font-bold tracking-tight">Create New Post</h1>
-            <p className="text-muted-foreground mt-2">
-              Share your story with the community
-            </p>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Enter your post title..."
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="excerpt">Excerpt</Label>
-                    <Textarea
-                      id="excerpt"
-                      value={excerpt}
-                      onChange={(e) => setExcerpt(e.target.value)}
-                      placeholder="Brief description of your post..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Content</Label>
-                    <RichTextEditor
-                      content={content}
-                      onChange={setContent}
-                      onImageUpload={handleImageUpload}
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <Label>Featured Image</Label>
-                  {featuredImage ? (
-                    <div className="relative">
-                      <img
-                        src={featuredImage.url}
-                        alt="Featured"
-                        className="w-full h-48 object-cover rounded-md"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => setFeaturedImage(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div
-                      {...getRootProps()}
-                      className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
-                        isDragActive ? 'border-primary' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
-                      }`}
-                    >
-                      <input {...getInputProps()} />
-                      <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        {isDragActive ? 'Drop image here' : 'Click or drag to upload'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </Card>
+        <div className="container py-8 px-4 sm:px-6 mx-auto">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <Link href="/blog">
+                <Button variant="ghost" className="mb-4">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Blog
+                </Button>
+              </Link>
+              <h1 className="text-3xl font-bold tracking-tight">Create New Post</h1>
+              <p className="text-muted-foreground mt-2">
+                Share your story with the community
+              </p>
             </div>
 
-            <div className="space-y-6">
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <Label>Status</Label>
-                  <Select value={status} onValueChange={(value: 'draft' | 'publish') => setStatus(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="publish">Publish</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <div className="grid gap-6 lg:grid-cols-4">
+              <div className="lg:col-span-3 space-y-6">
+                <Card className="p-6">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter your post title..."
+                        className="text-lg"
+                      />
+                    </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleSubmit('draft')}
-                      variant="outline"
-                      disabled={isCreating || isUploading}
-                      className="flex-1"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Draft
-                    </Button>
-                    <Button
-                      onClick={() => handleSubmit('publish')}
-                      disabled={isCreating || isUploading}
-                      className="flex-1"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Publish
-                    </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="excerpt">Excerpt</Label>
+                      <Textarea
+                        id="excerpt"
+                        value={excerpt}
+                        onChange={(e) => setExcerpt(e.target.value)}
+                        placeholder="Brief description of your post..."
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Content</Label>
+                      <RichTextEditor
+                        content={content}
+                        onChange={setContent}
+                        onImageUpload={handleImageUpload}
+                        placeholder="Start writing your post... You can drag and drop images directly into the content."
+                      />
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
 
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <Label>Categories</Label>
-                  <div className="space-y-2">
-                    {categories.map((category) => (
-                      <div key={category.id} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`category-${category.id}`}
-                          checked={selectedCategories.includes(category.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedCategories([...selectedCategories, category.id]);
-                            } else {
-                              setSelectedCategories(selectedCategories.filter(id => id !== category.id));
-                            }
-                          }}
-                          className="rounded border-border"
+              <div className="space-y-6">
+                <Card className="p-6">
+                  <div className="space-y-4">
+                    <Label>Publish</Label>
+                    <Select value={status} onValueChange={(value: 'draft' | 'publish') => setStatus(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="publish">Publish</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => handleSubmit('draft')}
+                        variant="outline"
+                        disabled={isCreating || isUploading}
+                        className="w-full"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Draft
+                      </Button>
+                      <Button
+                        onClick={() => handleSubmit('publish')}
+                        disabled={isCreating || isUploading}
+                        className="w-full"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Publish
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="space-y-4">
+                    <Label>Featured Image</Label>
+                    {featuredImage ? (
+                      <div className="relative">
+                        <img
+                          src={featuredImage.url}
+                          alt="Featured"
+                          className="w-full h-32 object-cover rounded-md"
                         />
-                        <Label htmlFor={`category-${category.id}`} className="text-sm font-normal">
-                          {category.name}
-                        </Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => setFeaturedImage(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                    ))}
+                    ) : (
+                      <div
+                        {...getRootProps()}
+                        className={`border-2 border-dashed rounded-md p-4 text-center cursor-pointer transition-colors ${
+                          isDragActive ? 'border-primary' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+                        }`}
+                      >
+                        <input {...getInputProps()} />
+                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">
+                          {isDragActive ? 'Drop here' : 'Upload featured image'}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </Card>
+                </Card>
 
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <Label>Tags</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      placeholder="Add tag..."
-                      onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                      className="flex-1"
-                    />
-                    <Button onClick={handleAddTag} size="sm" variant="outline">
-                      Add
-                    </Button>
-                  </div>
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="cursor-pointer">
-                          {tag}
-                          <X
-                            className="h-3 w-3 ml-1"
-                            onClick={() => handleRemoveTag(tag)}
+                <Card className="p-6">
+                  <div className="space-y-4">
+                    <Label>Categories</Label>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {categories.map((category) => (
+                        <div key={category.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`category-${category.id}`}
+                            checked={selectedCategories.includes(category.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCategories([...selectedCategories, category.id]);
+                              } else {
+                                setSelectedCategories(selectedCategories.filter(id => id !== category.id));
+                              }
+                            }}
+                            className="rounded border-border"
                           />
-                        </Badge>
+                          <Label htmlFor={`category-${category.id}`} className="text-sm font-normal">
+                            {category.name}
+                          </Label>
+                        </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              </Card>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="space-y-4">
+                    <Label>Tags</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        placeholder="Add tag..."
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleAddTag} size="sm" variant="outline">
+                        Add
+                      </Button>
+                    </div>
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="cursor-pointer">
+                            {tag}
+                            <X
+                              className="h-3 w-3 ml-1"
+                              onClick={() => handleRemoveTag(tag)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
         </div>

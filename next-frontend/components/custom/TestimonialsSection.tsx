@@ -109,7 +109,7 @@ export function TestimonialsSection() {
                 {visibleTestimonials.map((testimonial) => (
                   <Card key={testimonial.id} className="text-left">
                     <CardContent>
-                      <blockquote className="mb-2">
+                      <blockquote className="mb-3 pt-6">
                         "{testimonial.quote}"
                       </blockquote>
 
@@ -157,7 +157,7 @@ export function TestimonialsSection() {
             {visibleTestimonials.map((testimonial) => (
               <Card key={testimonial.id} className="text-left">
                 <CardContent>
-                  <blockquote className="text-lg font-medium mb-2">
+                  <blockquote className="mb-3 pt-6">
                     "{testimonial.quote}"
                   </blockquote>
                   <p className="text-muted-foreground font-semibold">{testimonial.author}</p>

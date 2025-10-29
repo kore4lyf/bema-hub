@@ -54,7 +54,7 @@ export interface MediaUpload {
 export const blogApi = createApi({
   reducerPath: 'blogApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_WORDPRESS_API_URL || 'https://your-wordpress-site.com/wp-json/wp/v2',
+    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/wp-json/wp/v2`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as any).auth.token;
       if (token) {
