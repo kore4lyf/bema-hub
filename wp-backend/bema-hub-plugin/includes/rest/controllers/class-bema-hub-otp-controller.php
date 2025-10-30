@@ -31,6 +31,15 @@ class Bema_Hub_OTP_Controller {
     private $jwt_auth;
 
     /**
+     * Maximum OTP requests allowed per 24 hours
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      int    $max_otp_requests    Maximum OTP requests per 24 hours.
+     */
+    private $max_otp_requests = 10;
+
+    /**
      * Initialize the controller and set its properties.
      *
      * @since    1.0.0
@@ -40,6 +49,95 @@ class Bema_Hub_OTP_Controller {
     public function __construct($logger, $jwt_auth) {
         $this->logger = $logger;
         $this->jwt_auth = $jwt_auth;
+    }
+
+    /**
+     * Check if user can request OTP based on rate limiting
+     *
+     * @since 1.0.0
+     * @param int $user_id The user ID
+     * @return bool|\WP_Error True if user can request OTP, WP_Error if rate limited
+     */
+    private function can_request_otp($user_id) {
+        // Get OTP request count and last successful request timestamp
+        $request_count = (int) \get_user_meta($user_id, 'bema_email_otp_request_count', true);
+        $last_request_timestamp = (int) \get_user_meta($user_id, 'bema_last_successful_email_otp_request', true);
+        
+        // Check if 24 hours have passed since last successful request
+        $time_since_last_request = \time() - $last_request_timestamp;
+        $twenty_four_hours = 24 * 60 * 60; // 86400 seconds
+        
+        if ($time_since_last_request >= $twenty_four_hours) {
+            // Reset count if 24 hours have passed
+            $request_count = 0;
+            \update_user_meta($user_id, 'bema_email_otp_request_count', $request_count);
+        }
+        
+        // Check if user has reached the maximum request limit
+        if ($request_count >= $this->max_otp_requests) {
+            $seconds_remaining = $twenty_four_hours - $time_since_last_request;
+            
+            // Format time remaining in a human-readable way
+            $hours = floor($seconds_remaining / 3600);
+            $minutes = floor(($seconds_remaining % 3600) / 60);
+            $seconds = $seconds_remaining % 60;
+            
+            // Create a human-readable time string
+            $time_string = '';
+            if ($hours > 0) {
+                $time_string .= $hours . ' hour' . ($hours > 1 ? 's' : '');
+                if ($minutes > 0 || $seconds > 0) {
+                    $time_string .= ', ';
+                }
+            }
+            if ($minutes > 0) {
+                $time_string .= $minutes . ' minute' . ($minutes > 1 ? 's' : '');
+                if ($seconds > 0) {
+                    $time_string .= ', ';
+                }
+            }
+            if ($seconds > 0 && $hours == 0) { // Only show seconds if less than 1 hour remaining
+                $time_string .= $seconds . ' second' . ($seconds > 1 ? 's' : '');
+            }
+            
+            // Fallback if all values are 0 (shouldn't happen but just in case)
+            if (empty($time_string)) {
+                $time_string = '1 second';
+            }
+            
+            return new \WP_Error(
+                'otp_request_limit_exceeded', 
+                "You have exceeded the maximum OTP request limit. Please try again in {$time_string}.", 
+                array('status' => 429)
+            );
+        }
+        
+        return true;
+    }
+
+    /**
+     * Increment OTP request count for user
+     *
+     * @since 1.0.0
+     * @param int $user_id The user ID
+     */
+    private function increment_otp_request_count($user_id) {
+        // Get current count
+        $request_count = (int) \get_user_meta($user_id, 'bema_email_otp_request_count', true);
+        
+        // Increment count
+        $request_count++;
+        
+        // Update count and timestamp
+        \update_user_meta($user_id, 'bema_email_otp_request_count', $request_count);
+        \update_user_meta($user_id, 'bema_last_successful_email_otp_request', \time());
+        
+        if ($this->logger) {
+            $this->logger->info('OTP request count incremented', array(
+                'user_id' => $user_id,
+                'request_count' => $request_count
+            ));
+        }
     }
 
     /**
@@ -82,6 +180,20 @@ class Bema_Hub_OTP_Controller {
             ), 200);
         }
 
+        // Check if user can request OTP (rate limiting)
+        $can_request = $this->can_request_otp($user->ID);
+        if (\is_wp_error($can_request)) {
+            if ($this->logger) {
+                $this->logger->warning('Password reset request denied due to rate limiting', array(
+                    'user_id' => $user->ID,
+                    'email' => $email,
+                    'error_code' => $can_request->get_error_code(),
+                    'error_message' => $can_request->get_error_message()
+                ));
+            }
+            return $can_request;
+        }
+
         // Generate and send OTP for password reset (reusing existing OTP fields)
         $otp_code = \rand(100000, 999999);
         $otp_expiry = \time() + 600; // 10 minutes expiry (as per existing specification)
@@ -92,6 +204,31 @@ class Bema_Hub_OTP_Controller {
         \update_user_meta($user->ID, 'bema_otp_expiry', $otp_expiry);
         \update_user_meta($user->ID, 'bema_otp_purpose', 'password_reset'); // Track purpose
 
+        // Send OTP via email using the new mailer class
+        $mailer_result = \Bema_Hub\Bema_Hub_Mailer::send_otp_email($email, $otp_code, 'password_reset');
+        
+        if (\is_wp_error($mailer_result)) {
+            if ($this->logger) {
+                $this->logger->error('Failed to send password reset OTP email', array(
+                    'user_id' => $user->ID,
+                    'user_email' => $email,
+                    'error_code' => $mailer_result->get_error_code(),
+                    'error_message' => $mailer_result->get_error_message()
+                ));
+            }
+            // Still return success to prevent email enumeration, but log the error
+        } else {
+            // Increment OTP request count only on successful email send
+            $this->increment_otp_request_count($user->ID);
+            
+            if ($this->logger) {
+                $this->logger->info('Password reset OTP email sent successfully', array(
+                    'user_id' => $user->ID,
+                    'user_email' => $email
+                ));
+            }
+        }
+
         // Log the OTP generation
         if ($this->logger) {
             $this->logger->info('Password reset OTP generated for user', array(
@@ -99,33 +236,6 @@ class Bema_Hub_OTP_Controller {
                 'user_email' => $email
             ));
         }
-
-        // Send OTP via email (in a real implementation, you would send an actual email)
-        // For now, we'll just log it
-        /* 
-         * REMOVED: Sensitive OTP code logging that should never appear in production
-         * if ($this->logger) {
-         *     $this->logger->info('OTP generated for new user', array(
-         *         'user_id' => $user_id,
-         *         'otp_code' => $otp_code // In production, never log OTP codes
-         *     ));
-         * }
-         */
-
-        if ($this->logger) {
-            $this->logger->info('OTP generated for new user', array(
-                'user_id' => $user->ID,
-                'otp_code' => $otp_code // In production, never log OTP codes
-            ));
-        }
-
-         if ($this->logger) {
-             $this->logger->info('Password reset OTP code (for development only)', array(
-                 'user_id' => $user->ID,
-                 'otp_code' => $otp_code // In production, never log OTP codes
-             ));
-         }
-         
 
         return new \WP_REST_Response(array(
             'success' => true,
@@ -168,6 +278,20 @@ class Bema_Hub_OTP_Controller {
             return new \WP_Error('user_not_found', 'User not found', array('status' => 404));
         }
 
+        // Check if user can request OTP (rate limiting)
+        $can_request = $this->can_request_otp($user->ID);
+        if (\is_wp_error($can_request)) {
+            if ($this->logger) {
+                $this->logger->warning('Resend OTP request denied due to rate limiting', array(
+                    'user_id' => $user->ID,
+                    'email' => $email,
+                    'error_code' => $can_request->get_error_code(),
+                    'error_message' => $can_request->get_error_message()
+                ));
+            }
+            return $can_request;
+        }
+
         // Check if user has an existing OTP
         $existing_otp = \get_user_meta($user->ID, 'bema_otp_code', true);
         $otp_purpose = \get_user_meta($user->ID, 'bema_otp_purpose', true);
@@ -197,6 +321,33 @@ class Bema_Hub_OTP_Controller {
         \update_user_meta($user->ID, 'bema_otp_expiry', $otp_expiry);
         \update_user_meta($user->ID, 'bema_otp_purpose', $otp_purpose); // Maintain the same purpose
 
+        // Send OTP via email using the new mailer class
+        $mailer_result = \Bema_Hub\Bema_Hub_Mailer::send_otp_email($email, $otp_code, $otp_purpose);
+        
+        if (\is_wp_error($mailer_result)) {
+            if ($this->logger) {
+                $this->logger->error('Failed to send resend OTP email', array(
+                    'user_id' => $user->ID,
+                    'user_email' => $email,
+                    'otp_purpose' => $otp_purpose,
+                    'error_code' => $mailer_result->get_error_code(),
+                    'error_message' => $mailer_result->get_error_message()
+                ));
+            }
+            // Still return success but log the error
+        } else {
+            // Increment OTP request count only on successful email send
+            $this->increment_otp_request_count($user->ID);
+            
+            if ($this->logger) {
+                $this->logger->info('Resend OTP email sent successfully', array(
+                    'user_id' => $user->ID,
+                    'user_email' => $email,
+                    'otp_purpose' => $otp_purpose
+                ));
+            }
+        }
+
         // Log the OTP generation (without sensitive data)
         if ($this->logger) {
             $this->logger->info('OTP resent for user', array(
@@ -204,25 +355,6 @@ class Bema_Hub_OTP_Controller {
                 'purpose' => $otp_purpose
             ));
         }
-
-        // In a real implementation, you would send the OTP via email
-        // For now, we'll just log it
-        /* 
-         * REMOVED: Sensitive OTP code logging that should never appear in production
-         * if ($this->logger) {
-         *     $this->logger->info('Resent OTP code (for development only)', array(
-         *         'user_id' => $user->ID,
-         *         'otp_code' => $otp_code // In production, never log OTP codes
-         *     ));
-         * }
-         */
-
-         if ($this->logger) {
-             $this->logger->info('Resent OTP code (for development only)', array(
-                 'user_id' => $user->ID,
-                 'otp_code' => $otp_code // In production, never log OTP codes
-             ));
-         }
 
         $message = 'A new verification code has been sent to your email.';
         if ($otp_purpose === 'password_reset') {

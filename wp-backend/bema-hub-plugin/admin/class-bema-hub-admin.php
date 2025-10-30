@@ -67,7 +67,7 @@ class Bema_Hub_Admin {
 	 * @since    1.0.0
 	 */
 	public function add_menu_page() {
-		add_menu_page(
+		\add_menu_page(
 			'Bema Hub Settings',           // Page title
 			'Bema Hub',                    // Menu title
 			'manage_options',              // Capability
@@ -89,6 +89,12 @@ class Bema_Hub_Admin {
 		
 		// Check for settings update messages
 		$settings_updated = isset( $_GET[ 'settings-updated' ] ) ? $_GET[ 'settings-updated' ] : false;
+		
+		// Handle test email submission
+		$test_email_result = '';
+		if (isset($_POST['bema_hub_test_email']) && \wp_verify_nonce($_POST['bema_hub_test_email_nonce'], 'bema_hub_test_email_action')) {
+			$test_email_result = $this->send_test_email($_POST['test_email_address']);
+		}
 		?>
 		<div class="wrap">
 			<h2>Bema Hub Settings</h2>
@@ -100,6 +106,12 @@ class Bema_Hub_Admin {
 			<?php elseif ( $settings_updated === 'false' ) : ?>
 				<div class="notice notice-error is-dismissible">
 					<p><strong>Error saving settings. Please try again.</strong></p>
+				</div>
+			<?php endif; ?>
+			
+			<?php if ($test_email_result) : ?>
+				<div class="notice <?php echo (strpos($test_email_result, 'success') !== false) ? 'notice-success' : 'notice-error'; ?> is-dismissible">
+					<p><strong><?php echo $test_email_result; ?></strong></p>
 				</div>
 			<?php endif; ?>
 			
@@ -132,9 +144,9 @@ class Bema_Hub_Admin {
 	 */
 	public function register_email_settings() {
 		// Register a setting group named 'bema-hub-smtp-group' for the 'bema_hub_smtp_settings' option array
-		register_setting( 'bema-hub-smtp-group', 'bema_hub_smtp_settings', array($this, 'smtp_settings_validate') );
+		\register_setting( 'bema-hub-smtp-group', 'bema_hub_smtp_settings', array($this, 'smtp_settings_validate') );
 
-		add_settings_section(
+		\add_settings_section(
 			'bema-hub-smtp-main-section',
 			'SMTP Mailer Credentials',
 			array($this, 'smtp_plugin_section_callback'), // Section introduction text
@@ -142,12 +154,12 @@ class Bema_Hub_Admin {
 		);
 		
 		// Define all SMTP fields
-		add_settings_field('smtp_host', 'SMTP Host', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'host']);
-		add_settings_field('smtp_port', 'SMTP Port', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'port']);
-		add_settings_field('smtp_secure', 'Encryption', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'secure']);
-		add_settings_field('smtp_user', 'Username (Email)', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'user']);
-		add_settings_field('smtp_pass', 'Password/App Key', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'pass', 'type' => 'password']);
-		add_settings_field('smtp_from_name', 'From Name', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'name']);
+		\add_settings_field('smtp_host', 'SMTP Host', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'host']);
+		\add_settings_field('smtp_port', 'SMTP Port', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'port']);
+		\add_settings_field('smtp_secure', 'Encryption', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'secure']);
+		\add_settings_field('smtp_user', 'Username (Email)', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'user']);
+		\add_settings_field('smtp_pass', 'Password/App Key', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'pass', 'type' => 'password']);
+		\add_settings_field('smtp_from_name', 'From Name', array($this, 'smtp_plugin_field_callback'), 'bema-hub-smtp-settings-email', 'bema-hub-smtp-main-section', ['field' => 'name']);
 	}
 
 	/**
@@ -157,9 +169,9 @@ class Bema_Hub_Admin {
 	 */
 	public function register_otp_settings() {
 		// Register a setting group named 'bema-hub-otp-group' for the 'bema_hub_otp_settings' option array
-		register_setting( 'bema-hub-otp-group', 'bema_hub_otp_settings', array($this, 'otp_settings_validate') );
+		\register_setting( 'bema-hub-otp-group', 'bema_hub_otp_settings', array($this, 'otp_settings_validate') );
 
-		add_settings_section(
+		\add_settings_section(
 			'bema-hub-otp-main-section',
 			'OTP Verification Settings',
 			array($this, 'otp_plugin_section_callback'), // Section introduction text
@@ -167,10 +179,10 @@ class Bema_Hub_Admin {
 		);
 		
 		// Define all OTP fields
-		add_settings_field('otp_expiry_time', 'OTP Expiry Time (minutes)', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'expiry_time']);
-		add_settings_field('otp_length', 'OTP Length', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'length']);
-		add_settings_field('otp_max_attempts', 'Max Verification Attempts', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'max_attempts']);
-		add_settings_field('otp_resend_delay', 'Resend Delay (seconds)', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'resend_delay']);
+		\add_settings_field('otp_expiry_time', 'OTP Expiry Time (minutes)', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'expiry_time']);
+		\add_settings_field('otp_length', 'OTP Length', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'length']);
+		\add_settings_field('otp_max_attempts', 'Max Verification Attempts', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'max_attempts']);
+		\add_settings_field('otp_resend_delay', 'Resend Delay (seconds)', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'resend_delay']);
 	}
 
 	/**
@@ -183,11 +195,30 @@ class Bema_Hub_Admin {
 		<h3>Email Settings (SMTP)</h3>
 		<form method="post" action="options.php">
 			<?php
-			settings_fields( 'bema-hub-smtp-group' ); // The setting group registered above
-			do_settings_sections( 'bema-hub-smtp-settings-email' ); // The page slug used for fields
-			submit_button();
+			\settings_fields( 'bema-hub-smtp-group' ); // The setting group registered above
+			\do_settings_sections( 'bema-hub-smtp-settings-email' ); // The page slug used for fields
+			\submit_button();
 			?>
 		</form>
+		
+		<!-- Test Email Form -->
+		<div class="card" style="max-width: 600px; margin-top: 30px;">
+			<h3>Test SMTP Configuration</h3>
+			<p>Send a test email to verify your SMTP settings are working correctly.</p>
+			<form method="post" action="">
+				<table class="form-table">
+					<tr>
+						<th scope="row">Test Email Address</th>
+						<td>
+							<input type="email" name="test_email_address" value="<?php echo \esc_attr(\get_option('admin_email')); ?>" class="regular-text" required />
+							<p class="description">Enter the email address where you want to receive the test email.</p>
+						</td>
+					</tr>
+				</table>
+				<?php \wp_nonce_field('bema_hub_test_email_action', 'bema_hub_test_email_nonce'); ?>
+				<?php \submit_button('Send Test Email', 'secondary', 'bema_hub_test_email'); ?>
+			</form>
+		</div>
 		<?php
 	}
 
@@ -201,9 +232,9 @@ class Bema_Hub_Admin {
 		<h3>OTP Verification Settings</h3>
 		<form method="post" action="options.php">
 			<?php
-			settings_fields( 'bema-hub-otp-group' ); // The setting group registered above
-			do_settings_sections( 'bema-hub-otp-settings' ); // The page slug used for fields
-			submit_button();
+			\settings_fields( 'bema-hub-otp-group' ); // The setting group registered above
+			\do_settings_sections( 'bema-hub-otp-settings' ); // The page slug used for fields
+			\submit_button();
 			?>
 		</form>
 		<?php
@@ -233,10 +264,10 @@ class Bema_Hub_Admin {
 	 * @since    1.0.0
 	 */
 	public function smtp_plugin_field_callback( $args ) {
-		$options = get_option( 'bema_hub_smtp_settings' );
+		$options = \get_option( 'bema_hub_smtp_settings' );
 		$field   = $args['field'];
 		$type    = isset($args['type']) ? $args['type'] : 'text';
-		$value   = isset( $options[ $field ] ) ? esc_attr( $options[ $field ] ) : '';
+		$value   = isset( $options[ $field ] ) ? \esc_attr( $options[ $field ] ) : '';
 		
 		echo '<input type="' . $type . '" name="bema_hub_smtp_settings[' . $field . ']" value="' . $value . '" style="width: 350px;" />';
 
@@ -253,9 +284,9 @@ class Bema_Hub_Admin {
 	 * @since    1.0.0
 	 */
 	public function otp_plugin_field_callback( $args ) {
-		$options = get_option( 'bema_hub_otp_settings' );
+		$options = \get_option( 'bema_hub_otp_settings' );
 		$field   = $args['field'];
-		$value   = isset( $options[ $field ] ) ? esc_attr( $options[ $field ] ) : '';
+		$value   = isset( $options[ $field ] ) ? \esc_attr( $options[ $field ] ) : '';
 		
 		// Set default values if not set
 		if (empty($value)) {
@@ -302,20 +333,20 @@ class Bema_Hub_Admin {
 	public function smtp_settings_validate( $input ) {
 		// Validate SMTP port
 		if ( isset( $input['port'] ) ) {
-			$input['port'] = absint( $input['port'] );
+			$input['port'] = \absint( $input['port'] );
 			if ( $input['port'] < 1 || $input['port'] > 65535 ) {
-				add_settings_error(
+				\add_settings_error(
 					'bema_hub_smtp_settings',
 					'invalid_port',
 					'Invalid SMTP port. Please enter a port between 1 and 65535.',
 					'error'
 				);
-				return get_option( 'bema_hub_smtp_settings' ); // Return previous settings
+				return \get_option( 'bema_hub_smtp_settings' ); // Return previous settings
 			}
 		}
 		
 		// Add success message
-		add_settings_error(
+		\add_settings_error(
 			'bema_hub_smtp_settings',
 			'smtp_settings_updated',
 			'SMTP settings saved successfully!',
@@ -333,62 +364,62 @@ class Bema_Hub_Admin {
 	public function otp_settings_validate( $input ) {
 		// Validate OTP expiry time
 		if ( isset( $input['expiry_time'] ) ) {
-			$input['expiry_time'] = absint( $input['expiry_time'] );
+			$input['expiry_time'] = \absint( $input['expiry_time'] );
 			if ( $input['expiry_time'] < 1 || $input['expiry_time'] > 60 ) {
-				add_settings_error(
+				\add_settings_error(
 					'bema_hub_otp_settings',
 					'invalid_expiry_time',
 					'Invalid OTP expiry time. Please enter a value between 1 and 60 minutes.',
 					'error'
 				);
-				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+				return \get_option( 'bema_hub_otp_settings' ); // Return previous settings
 			}
 		}
 		
 		// Validate OTP length
 		if ( isset( $input['length'] ) ) {
-			$input['length'] = absint( $input['length'] );
+			$input['length'] = \absint( $input['length'] );
 			if ( $input['length'] < 4 || $input['length'] > 10 ) {
-				add_settings_error(
+				\add_settings_error(
 					'bema_hub_otp_settings',
 					'invalid_length',
 					'Invalid OTP length. Please enter a value between 4 and 10 digits.',
 					'error'
 				);
-				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+				return \get_option( 'bema_hub_otp_settings' ); // Return previous settings
 			}
 		}
 		
 		// Validate max attempts
 		if ( isset( $input['max_attempts'] ) ) {
-			$input['max_attempts'] = absint( $input['max_attempts'] );
+			$input['max_attempts'] = \absint( $input['max_attempts'] );
 			if ( $input['max_attempts'] < 1 || $input['max_attempts'] > 10 ) {
-				add_settings_error(
+				\add_settings_error(
 					'bema_hub_otp_settings',
 					'invalid_max_attempts',
 					'Invalid max attempts. Please enter a value between 1 and 10 attempts.',
 					'error'
 				);
-				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+				return \get_option( 'bema_hub_otp_settings' ); // Return previous settings
 			}
 		}
 		
 		// Validate resend delay
 		if ( isset( $input['resend_delay'] ) ) {
-			$input['resend_delay'] = absint( $input['resend_delay'] );
+			$input['resend_delay'] = \absint( $input['resend_delay'] );
 			if ( $input['resend_delay'] < 0 || $input['resend_delay'] > 300 ) {
-				add_settings_error(
+				\add_settings_error(
 					'bema_hub_otp_settings',
 					'invalid_resend_delay',
 					'Invalid resend delay. Please enter a value between 0 and 300 seconds.',
 					'error'
 				);
-				return get_option( 'bema_hub_otp_settings' ); // Return previous settings
+				return \get_option( 'bema_hub_otp_settings' ); // Return previous settings
 			}
 		}
 		
 		// Add success message
-		add_settings_error(
+		\add_settings_error(
 			'bema_hub_otp_settings',
 			'otp_settings_updated',
 			'OTP settings saved successfully!',
@@ -405,10 +436,10 @@ class Bema_Hub_Admin {
 	 */
 	public function load_smtp_settings( $phpmailer ) {
 		// Retrieve the saved SMTP settings array
-		$options = get_option( 'bema_hub_smtp_settings' );
+		$options = \get_option( 'bema_hub_smtp_settings' );
 
 		// Check if the required settings exist and are not empty
-		if ( ! is_array( $options ) || empty( $options['host'] ) || empty( $options['user'] ) || empty( $options['pass'] ) ) {
+		if ( ! \is_array( $options ) || empty( $options['host'] ) || empty( $options['user'] ) || empty( $options['pass'] ) ) {
 			return; // If settings are incomplete, use default PHP mail()
 		}
 		
@@ -428,6 +459,66 @@ class Bema_Hub_Admin {
 		$phpmailer->From       = $options['user']; // Use username as From email
 		if ( ! empty( $options['name'] ) ) {
 			$phpmailer->FromName   = $options['name'];
+		}
+	}
+	
+	/**
+	 * Send a test email using the configured SMTP settings
+	 *
+	 * @since    1.0.0
+	 * @param    string    $to_email    The email address to send the test to
+	 * @return   string                 Success or error message
+	 */
+	public function send_test_email($to_email) {
+		// Validate email address
+		if (!\is_email($to_email)) {
+			return 'Error: Please enter a valid email address.';
+		}
+		
+		// Log test email attempt
+		if (class_exists('Bema_Hub\Bema_Hub_Logger')) {
+			$logger = \Bema_Hub\Bema_Hub_Logger::create('admin');
+			$logger->info('Admin initiated SMTP test email', array(
+				'to_email' => $to_email,
+				'user_id' => get_current_user_id(),
+				'timestamp' => current_time('mysql')
+			));
+		}
+		
+		// Use the existing mailer class to send the test email
+		$result = \Bema_Hub\Bema_Hub_Mailer::test_email_configuration($to_email);
+		
+		if ($result === true) {
+			// Log success
+			if (class_exists('Bema_Hub\Bema_Hub_Logger')) {
+				$logger = \Bema_Hub\Bema_Hub_Logger::create('admin');
+				$logger->info('SMTP test email successful', array(
+					'to_email' => $to_email,
+					'user_id' => get_current_user_id()
+				));
+			}
+			return 'Success: Test email sent successfully! Please check your inbox.';
+		} else {
+			$error_message = 'Error: Failed to send test email.';
+			if (\is_wp_error($result)) {
+				$error_message .= ' ' . $result->get_error_message();
+			}
+			
+			// Log error
+			if (class_exists('Bema_Hub\Bema_Hub_Logger')) {
+				$logger = \Bema_Hub\Bema_Hub_Logger::create('admin');
+				$logger->error('SMTP test email failed', array(
+					'to_email' => $to_email,
+					'user_id' => get_current_user_id(),
+					'error' => $error_message,
+					'wp_error' => \is_wp_error($result) ? array(
+						'code' => $result->get_error_code(),
+						'message' => $result->get_error_message()
+					) : 'Not a WP_Error'
+				));
+			}
+			
+			return $error_message;
 		}
 	}
 }

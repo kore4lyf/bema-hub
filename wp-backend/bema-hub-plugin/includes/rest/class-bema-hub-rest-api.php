@@ -128,10 +128,29 @@ class Bema_Hub_REST_API {
     public function save_invalidated_tokens() {
         if ($this->user_controller) {
             $tokens = $this->user_controller->get_invalidated_tokens();
-            \update_option('bema_hub_invalidated_tokens', $tokens, false);
             
-            if ($this->logger) {
-                $this->logger->info('Invalidated tokens saved to database', array('count' => count($tokens)));
+            // Only update if there are tokens and they've changed
+            $existing_tokens = \get_option('bema_hub_invalidated_tokens', array());
+            
+            // Check if tokens have changed (simple array comparison)
+            $tokens_changed = ($tokens !== $existing_tokens);
+            
+            if ($tokens_changed) {
+                \update_option('bema_hub_invalidated_tokens', $tokens, false);
+                
+                if ($this->logger) {
+                    $this->logger->info('Invalidated tokens saved to database', array(
+                        'count' => count($tokens),
+                        'changed' => true
+                    ));
+                }
+            } elseif (!empty($tokens) && $this->logger) {
+                // Log only when there are tokens but they haven't changed
+                // This can be removed in production to reduce logging
+                $this->logger->debug('Invalidated tokens unchanged, skipping database update', array(
+                    'count' => count($tokens),
+                    'changed' => false
+                ));
             }
         }
     }

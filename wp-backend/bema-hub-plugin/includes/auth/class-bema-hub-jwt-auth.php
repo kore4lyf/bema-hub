@@ -253,14 +253,31 @@ class Bema_Hub_JWT_Auth {
         $user = \wp_authenticate($username_or_email, $password);
         
         if (\is_wp_error($user)) {
+            // Sanitize the error message to remove HTML
+            $error_code = $user->get_error_code();
+            $error_message = $user->get_error_message();
+            
+            // Remove HTML tags and clean up the message
+            $clean_message = \wp_strip_all_tags($error_message);
+            
+            // Create a cleaner error message
+            if ($error_code === 'incorrect_password') {
+                $clean_message = 'The password you entered is incorrect. Please try again.';
+            } elseif ($error_code === 'invalid_email' || $error_code === 'invalid_username') {
+                $clean_message = 'Invalid username or email address. Please check and try again.';
+            }
+            
+            // Create a new WP_Error with clean message
+            $clean_error = new \WP_Error($error_code, $clean_message, $user->get_error_data());
+            
             if ($this->logger) {
                 $this->logger->warning('Authentication failed', array(
                     'username_or_email' => $username_or_email,
-                    'error_code' => $user->get_error_code(),
-                    'error_message' => $user->get_error_message()
+                    'error_code' => $clean_error->get_error_code(),
+                    'error_message' => $clean_error->get_error_message()
                 ));
             }
-            return $user;
+            return $clean_error;
         }
 
         // Generate token

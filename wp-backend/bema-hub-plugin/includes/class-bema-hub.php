@@ -140,6 +140,11 @@ class Bema_Hub {
 		 */
 		require_once $plugin_dir . 'rest/class-bema-hub-rest-api.php';
 
+		/**
+		 * The mailer class.
+		 */
+		require_once $plugin_dir . 'class-bema-hub-mailer.php';
+
 		$this->loader = new Bema_Hub_Loader();
 	}
 
