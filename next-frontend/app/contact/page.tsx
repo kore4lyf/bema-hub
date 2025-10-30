@@ -8,48 +8,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mail, MapPin, Phone, Clock, Send } from "lucide-react";
 import { toast } from "sonner";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const contactInfo = [
   {
     icon: Mail,
     title: "Email",
-    value: "support@bemahub.com",
-    link: "mailto:support@bemahub.com"
+    value: "bemamarketing@bemamusic.com",
+    link: "mailto:bemamarketing@bemamusic.com"
   },
   {
     icon: Phone,
     title: "Phone",
-    value: "+1 (555) 123-4567",
-    link: "tel:+15551234567"
+    value: "+234 916 2944 753",
+    link: "tel:+2349162944753"
   },
   {
     icon: MapPin,
     title: "Address",
-    value: "123 Music Street, LA, CA 90001",
+    value: "244 5th Ave, suite 2510 New York, NY 10001",
     link: "#"
   },
   {
     icon: Clock,
     title: "Hours",
-    value: "Mon-Fri: 9:00 AM - 6:00 PM PST",
+    value: "Mon-Sat: 10:00 AM - 6:00 PM WAT",
     link: "#"
   }
 ];
 
-const departments = [
-  { value: "general", label: "General Inquiry" },
-  { value: "support", label: "Technical Support" },
-  { value: "partnerships", label: "Partnerships" },
-  { value: "press", label: "Press & Media" },
-  { value: "careers", label: "Careers" }
-];
-
 export default function ContactPage() {
   return (
-    <ProtectedRoute>
+    <>
       <ContactContent />
-    </ProtectedRoute>
+    </>
   );
 }
 
@@ -76,64 +68,51 @@ function ContactContent() {
           <div className="grid lg:grid-cols-5 gap-16">
             
             <div className="lg:col-span-3">
-              <h2 className="text-2xl font-bold mb-8">Send us a Message</h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="John" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Doe" required />
-                  </div>
-                </div>
+              <Card>
+                <CardHeader className="mb-4">
+                  <CardTitle>Send us a Message</CardTitle>
+                </CardHeader>
+                
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input id="firstName" placeholder="Enter first name" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input id="lastName" placeholder="Enter last name" required />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="you@example.com" required />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" placeholder="Enter email" required />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number (Optional)</Label>
-                  <Input id="phone" type="tel" placeholder="+1 (555) 123-4567" />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject</Label>
+                      <Input id="subject" placeholder="How can we help?" required />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <select 
-                    id="department"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {departments.map((dept) => (
-                      <option key={dept.value} value={dept.value}>
-                        {dept.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Message</Label>
+                      <Textarea 
+                        id="message" 
+                        placeholder="Enter you message." 
+                        rows={6}
+                        className="bg-inherit"
+                        required 
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input id="subject" placeholder="How can we help?" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea 
-                    id="message" 
-                    placeholder="Tell us more about your inquiry..." 
-                    rows={6}
-                    required 
-                  />
-                </div>
-
-                <Button type="submit" size="lg" className="w-full sm:w-auto">
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Message
-                </Button>
-              </form>
+                    <Button type="submit" size="lg" className="w-full sm:w-auto">
+                      Send Message
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>  
             </div>
             
             <div className="lg:col-span-2 space-y-12">

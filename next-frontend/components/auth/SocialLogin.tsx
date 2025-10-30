@@ -6,24 +6,64 @@ import { setCredentials } from '@/lib/features/auth/authSlice';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+declare global {
+  interface Window {
+    google: any;
+    FB: any;
+    googleLoaded: boolean;
+    fbLoaded: boolean;
+    fbAsyncInit?: () => void;
+  }
+}
 
 export function GoogleLoginButton() {
   const dispatch = useDispatch();
   const router = useRouter();
   const [socialLogin, { isLoading }] = useSocialLoginMutation();
 
-  const handleGoogleLogin = async (response: any) => {
+  useEffect(() => {
+    // Load Google SDK
+    if (typeof window !== 'undefined' && !window.googleLoaded) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        window.googleLoaded = true;
+        initializeGoogleSignIn();
+      };
+      document.head.appendChild(script);
+    } else if (window.google) {
+      initializeGoogleSignIn();
+    }
+  }, []);
+
+  const initializeGoogleSignIn = () => {
+    if (window.google && window.google.accounts) {
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse
+      });
+    }
+  };
+
+  const handleGoogleResponse = async (response: any) => {
     try {
-      const profile = response.getBasicProfile();
+      // Decode the JWT token to get user info
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
       
+      // Extract user data from Google response
       const socialData = {
         provider: 'google',
-        provider_id: profile.getId(),
-        email: profile.getEmail(),
-        first_name: profile.getGivenName(),
-        last_name: profile.getFamilyName()
+        provider_id: payload.sub,
+        email: payload.email,
+        first_name: payload.given_name,
+        last_name: payload.family_name
       };
 
+      // Send to our backend for validation and JWT creation
       const result = await socialLogin(socialData).unwrap();
       
       if (result.token) {
@@ -43,12 +83,28 @@ export function GoogleLoginButton() {
         }
       }
     } catch (error: any) {
-      toast.error(error.data?.message || 'Google login failed');
+      console.error('Google login error:', error);
+      toast.error(error.data?.message || 'Google login failed. Please try again.');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      if (window.google && window.google.accounts) {
+        // Trigger Google One Tap or Sign In prompt
+        window.google.accounts.id.prompt();
+      } else {
+        // Fallback to redirect approach if SDK not available
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+      }
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      toast.error('Google login failed. Please try again.');
     }
   };
 
   return (
-    <Button variant="outline" type="button" disabled={isLoading}>
+    <Button variant="outline" type="button" onClick={handleGoogleLogin} disabled={isLoading}>
       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
         <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
         <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -65,8 +121,37 @@ export function FacebookLoginButton() {
   const router = useRouter();
   const [socialLogin, { isLoading }] = useSocialLoginMutation();
 
+  useEffect(() => {
+    // Load Facebook SDK
+    if (typeof window !== 'undefined' && !window.fbLoaded) {
+      (window as any).fbAsyncInit = function() {
+        (window as any).FB.init({
+          appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
+          cookie: true,
+          xfbml: true,
+          version: 'v18.0'
+        });
+        (window as any).fbLoaded = true;
+      };
+
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        (js as any).src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs && fjs.parentNode && fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    }
+  }, []);
+
   const handleFacebookLogin = async () => {
     try {
+      if (!(window as any).FB) {
+        // Fallback to backend OAuth
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/facebook`;
+        return;
+      }
+
       (window as any).FB.login(async (response: any) => {
         if (response.authResponse) {
           (window as any).FB.api('/me', { fields: 'id,name,email,first_name,last_name' }, async (profile: any) => {
@@ -79,6 +164,7 @@ export function FacebookLoginButton() {
             };
 
             try {
+              // Send social data to our backend to get JWT token
               const result = await socialLogin(socialData).unwrap();
               
               if (result.token) {
@@ -98,13 +184,19 @@ export function FacebookLoginButton() {
                 }
               }
             } catch (error: any) {
-              toast.error(error.data?.message || 'Facebook login failed');
+              console.error('Facebook login error:', error);
+              toast.error(error.data?.message || 'Facebook login failed. Please try again.');
             }
           });
+        } else {
+          // User cancelled login or didn't fully authorize
+          toast.info('Facebook login cancelled.');
         }
       }, { scope: 'public_profile,email' });
     } catch (error: any) {
-      toast.error('Facebook login failed');
+      console.error('Facebook login error:', error);
+      // Fallback to backend OAuth
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/facebook`;
     }
   };
 
@@ -123,41 +215,18 @@ export function TwitterLoginButton() {
   const router = useRouter();
   const [socialLogin, { isLoading }] = useSocialLoginMutation();
 
-  const handleTwitterLogin = async (twitterUserData: any) => {
+  const handleTwitterLogin = async () => {
     try {
-      const socialData = {
-        provider: 'twitter',
-        provider_id: twitterUserData.id,
-        email: twitterUserData.email,
-        first_name: twitterUserData.first_name,
-        last_name: twitterUserData.last_name
-      };
-
-      const result = await socialLogin(socialData).unwrap();
-      
-      if (result.token) {
-        dispatch(setCredentials({
-          authData: {
-            ...result,
-            timestamp: new Date().toISOString(),
-          }
-        }));
-        toast.success('Twitter login successful!');
-        
-        // Route based on email verification status
-        if (result.bema_email_verified === false) {
-          router.push('/signup/verify');
-        } else {
-          router.push('/dashboard');
-        }
-      }
+      // Always use backend OAuth flow for Twitter
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/twitter`;
     } catch (error: any) {
-      toast.error(error.data?.message || 'Twitter login failed');
+      console.error('Twitter login error:', error);
+      toast.error('Twitter login failed. Please try again.');
     }
   };
 
   return (
-    <Button variant="outline" type="button" disabled={isLoading}>
+    <Button variant="outline" type="button" onClick={handleTwitterLogin} disabled={isLoading}>
       <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
       </svg>

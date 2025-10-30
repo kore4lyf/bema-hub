@@ -2,32 +2,37 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export interface BlogPost {
   id: number;
-  slug: string;
   title: { rendered: string };
   content: { rendered: string };
   excerpt: { rendered: string };
+  slug: string;
   date: string;
   modified: string;
   status: 'publish' | 'draft' | 'private';
+  author: number;
+  featured_media: number;
   categories: number[];
   tags: number[];
-  featured_media: number;
-  author: number;
   _embedded?: {
-    author: Array<{ name: string; avatar_urls: { 96: string } }>;
-    'wp:featuredmedia': Array<{ source_url: string; alt_text: string }>;
-    'wp:term': Array<Array<{ id: number; name: string; slug: string }>>;
+    author?: Array<{
+      id: number;
+      name: string;
+      avatar_urls: Record<string, string>;
+    }>;
+    'wp:featuredmedia'?: Array<{
+      id: number;
+      source_url: string;
+      alt_text: string;
+    }>;
+    'wp:term'?: Array<Array<{
+      id: number;
+      name: string;
+      slug: string;
+    }>>;
   };
 }
 
-export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  count: number;
-}
-
-export interface Tag {
+export interface BlogCategory {
   id: number;
   name: string;
   slug: string;
@@ -44,13 +49,6 @@ export interface CreatePostData {
   featured_media?: number;
 }
 
-export interface MediaUpload {
-  id: number;
-  source_url: string;
-  alt_text: string;
-  media_type: string;
-}
-
 export const blogApi = createApi({
   reducerPath: 'blogApi',
   baseQuery: fetchBaseQuery({
@@ -63,94 +61,111 @@ export const blogApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Post', 'Category', 'Tag', 'Media'],
+  tagTypes: ['BlogPost', 'BlogCategory'],
   endpoints: (builder) => ({
-    // Get all posts
-    getPosts: builder.query<BlogPost[], { 
-      page?: number; 
-      per_page?: number; 
-      search?: string; 
-      categories?: string; 
-      tags?: string;
-      orderby?: string;
+    // Get all posts with filters
+    getPosts: builder.query<BlogPost[], {
+      per_page?: number;
+      page?: number;
+      orderby?: 'date' | 'title' | 'modified';
       order?: 'asc' | 'desc';
+      categories?: number[];
+      tags?: number[];
+      search?: string;
+      status?: string;
+      _embed?: boolean;
     }>({
-      query: (params = {}) => ({
-        url: '/posts',
-        params: { _embed: true, ...params },
-      }),
-      providesTags: ['Post'],
+      query: (params = {}) => {
+        const searchParams = new URLSearchParams();
+        
+        // Default parameters
+        searchParams.append('per_page', (params.per_page || 10).toString());
+        searchParams.append('orderby', params.orderby || 'date');
+        searchParams.append('order', params.order || 'desc');
+        
+        // Optional parameters
+        if (params.page) searchParams.append('page', params.page.toString());
+        if (params.categories?.length) {
+          searchParams.append('categories', params.categories.join(','));
+        }
+        if (params.tags?.length) {
+          searchParams.append('tags', params.tags.join(','));
+        }
+        if (params.search) searchParams.append('search', params.search);
+        if (params.status) searchParams.append('status', params.status);
+        if (params._embed) searchParams.append('_embed', 'true');
+        
+        return `/wp-json/wp/v2/posts?${searchParams.toString()}`;
+      },
+      providesTags: ['BlogPost'],
     }),
 
     // Get single post by slug
     getPostBySlug: builder.query<BlogPost, string>({
-      query: (slug) => ({
-        url: '/posts',
-        params: { slug, _embed: true },
-      }),
+      query: (slug) => `/wp-json/wp/v2/posts?slug=${slug}&_embed=true`,
       transformResponse: (response: BlogPost[]) => response[0],
-      providesTags: (result) => result ? [{ type: 'Post', id: result.id }] : [],
+      providesTags: (result) => result ? [{ type: 'BlogPost', id: result.id }] : [],
     }),
 
     // Get single post by ID
     getPost: builder.query<BlogPost, number>({
-      query: (id) => ({
-        url: `/posts/${id}`,
-        params: { _embed: true },
-      }),
-      providesTags: (result) => result ? [{ type: 'Post', id: result.id }] : [],
+      query: (id) => `/wp-json/wp/v2/posts/${id}?_embed=true`,
+      providesTags: (result) => result ? [{ type: 'BlogPost', id: result.id }] : [],
+    }),
+
+    // Get categories
+    getCategories: builder.query<BlogCategory[], void>({
+      query: () => '/wp-json/wp/v2/categories?per_page=100',
+      providesTags: ['BlogCategory'],
     }),
 
     // Create new post
     createPost: builder.mutation<BlogPost, CreatePostData>({
       query: (data) => ({
-        url: '/posts',
+        url: '/wp-json/wp/v2/posts',
         method: 'POST',
         body: data,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: ['BlogPost'],
     }),
 
     // Update post
     updatePost: builder.mutation<BlogPost, { id: number; data: Partial<CreatePostData> }>({
       query: ({ id, data }) => ({
-        url: `/posts/${id}`,
+        url: `/wp-json/wp/v2/posts/${id}`,
         method: 'POST',
         body: data,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }),
-      invalidatesTags: (result) => result ? [{ type: 'Post', id: result.id }] : [],
+      invalidatesTags: (result) => result ? [{ type: 'BlogPost', id: result.id }] : [],
     }),
 
     // Delete post
-    deletePost: builder.mutation<void, number>({
+    deletePost: builder.mutation<{ deleted: boolean }, number>({
       query: (id) => ({
-        url: `/posts/${id}`,
+        url: `/wp-json/wp/v2/posts/${id}`,
         method: 'DELETE',
-        params: { force: true },
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: ['BlogPost'],
     }),
 
-    // Get categories
-    getCategories: builder.query<Category[], void>({
-      query: () => '/categories',
-      providesTags: ['Category'],
+    // Search posts
+    searchPosts: builder.query<BlogPost[], { query: string; per_page?: number }>({
+      query: ({ query, per_page = 10 }) => 
+        `/posts?search=${encodeURIComponent(query)}&per_page=${per_page}&_embed=true`,
+      providesTags: ['BlogPost'],
     }),
 
-    // Get tags
-    getTags: builder.query<Tag[], void>({
-      query: () => '/tags',
-      providesTags: ['Tag'],
-    }),
-
-    // Upload media
-    uploadMedia: builder.mutation<MediaUpload, FormData>({
-      query: (formData) => ({
-        url: '/media',
-        method: 'POST',
-        body: formData,
-      }),
-      invalidatesTags: ['Media'],
+    // Get featured posts
+    getFeaturedPosts: builder.query<BlogPost[], { per_page?: number }>({
+      query: ({ per_page = 5 } = {}) => 
+        `/posts?meta_key=featured&meta_value=1&per_page=${per_page}&_embed=true`,
+      providesTags: ['BlogPost'],
     }),
   }),
 });
@@ -159,10 +174,10 @@ export const {
   useGetPostsQuery,
   useGetPostBySlugQuery,
   useGetPostQuery,
+  useGetCategoriesQuery,
   useCreatePostMutation,
   useUpdatePostMutation,
   useDeletePostMutation,
-  useGetCategoriesQuery,
-  useGetTagsQuery,
-  useUploadMediaMutation,
+  useSearchPostsQuery,
+  useGetFeaturedPostsQuery,
 } = blogApi;

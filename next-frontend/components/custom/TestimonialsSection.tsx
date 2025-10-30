@@ -108,14 +108,14 @@ export function TestimonialsSection() {
               <div className="grid gap-6 md:grid-cols-3 transition-transform duration-500 ease-in-out">
                 {visibleTestimonials.map((testimonial) => (
                   <Card key={testimonial.id} className="text-left">
-                    <CardContent>
+                    <CardContent className="flex flex-col justify-between items-between">
                       <blockquote className="mb-3 pt-6">
-                        "{testimonial.quote}"
+                        {testimonial.quote}
                       </blockquote>
 
                       <div className="flex gap-2 items-center">
-                      <p className="font-semibold">{testimonial.author}</p> <span className="text-muted-foreground">|</span> 
-                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        <p className="font-semibold">{testimonial.author}</p> <span className="text-muted-foreground">|</span> 
+                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
                       </div>
                     </CardContent>
                   </Card>

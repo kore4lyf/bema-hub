@@ -8,21 +8,19 @@ import Link from "next/link";
 
 export function EchoLoopSection() {
   return (
-    <section className="py-20 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+    <section className="py-20 bg-background">
       <div className="container px-4 sm:px-6 mx-auto">
         <div className="text-center mb-16">
-          <Badge variant="secondary" className="mb-4 px-4 py-2">
-            <Repeat className="h-4 w-4 mr-2" /> Echo Loop </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Grow Together, <span className="text-blue-600">Earn Together</span>
+            Community <span className="text-blue-600">Membership</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Our revolutionary referral ecosystem rewards you for building the Bema Music community. 
-            The more you contribute, the more exclusive perks you unlock.
+            BemaHub helps faith-driven artists connect with listeners who truly get their message. 
+            No algorithms, no industry gatekeepers - just real community supporting real artists.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-16">
           <Card className="relative overflow-hidden border-2 border-blue-200 dark:border-blue-800">
             <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 text-sm font-medium">
               Pro Level
@@ -37,19 +35,19 @@ export function EchoLoopSection() {
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-blue-600" />
-                  <span>Early access to new releases</span>
+                  <span>Discover new artists before they blow up</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Music className="h-4 w-4 text-blue-600" />
-                  <span>Exclusive live session invites</span>
+                  <span>Behind-the-scenes content and stories</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-blue-600" />
-                  <span>Pro-only campaign participation</span>
+                  <span>Help artists reach their goals</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-blue-600" />
-                  <span>Referral bonuses</span>
+                  <span>Join a community that shares your values</span>
                 </li>
               </ul>
               <p className="text-sm text-muted-foreground">

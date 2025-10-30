@@ -71,27 +71,7 @@ export function ContactSection() {
                   </div>
                 </div>
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Follow Us</h3>
-                <div className="flex gap-4">
-                  <Button variant="outline" size="icon">
-                    <span className="sr-only">Twitter</span>
-                    <div className="h-4 w-4 bg-gray-200 rounded-full" />
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <span className="sr-only">Instagram</span>
-                    <div className="h-4 w-4 bg-gray-200 rounded-full" />
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <span className="sr-only">Facebook</span>
-                    <div className="h-4 w-4 bg-gray-200 rounded-full" />
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <span className="sr-only">YouTube</span>
-                    <div className="h-4 w-4 bg-gray-200 rounded-full" />
-                  </Button>
-                </div>
-              </div>
+              
             </div>
           </div>
         </div>

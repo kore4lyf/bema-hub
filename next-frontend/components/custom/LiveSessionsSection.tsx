@@ -61,39 +61,6 @@ export function LiveSessionsSection() {
       image: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80"
     },
     {
-      id: 2,
-      title: "Echo Loop Ambassador Meetup",
-      description: "Exclusive gathering for Echo Loop Ambassadors. Network with fellow ambassadors, get updates on upcoming campaigns, and provide feedback directly to the Bema Music team.",
-      date: "2025-11-02",
-      time: "7:00 PM EST",
-      location: "Private Stream",
-      attendees: 45,
-      isLive: true,
-      isUpcoming: true,
-      category: "Community",
-      level: "Ambassador Only",
-      tags: ["Ambassador", "Networking", "Exclusive"],
-      image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80"
-    },
-    {
-      id: 2,
-      title: "Echo Loop Ambassador Meetup",
-      description: "Exclusive gathering for Echo Loop Ambassadors. Network with fellow ambassadors, get updates on upcoming campaigns, and provide feedback directly to the Bema Music team.",
-      date: "2025-11-02",
-      time: "7:00 PM EST",
-      location: "Private Stream",
-      attendees: 45,
-      isLive: true,
-      isUpcoming: true,
-      category: "Community",
-      level: "Ambassador Only",
-      tags: ["Ambassador", "Networking", "Exclusive"],
-      image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80"
-    }
-  ];
-
-  const pastEvents: Event[] = [
-    {
       id: 4,
       title: "Fan Spotlight Session",
       description: "Monthly session where Echo Loop members can showcase their own music and get feedback from Bema Music. Open to all levels with priority given to Pro and Ambassador members.",
@@ -107,21 +74,54 @@ export function LiveSessionsSection() {
       level: "All Members",
       tags: ["Fan Music", "Feedback", "Showcase"],
       image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80"
-    },
+    }
+  ];
+
+  const pastEvents: Event[] = [
     {
-      id: 5,
-      title: "Echo Loop Onboarding Session",
-      description: "New to the Echo Loop? Join this comprehensive introduction to the Bema Music community, learn about referral benefits, and discover how to maximize your experience.",
-      date: "2025-11-22",
-      time: "5:00 PM EST",
-      location: "Welcome Stream",
-      attendees: 156,
+      id: 6,
+      title: "Artist Collaboration Workshop",
+      description: "Past workshop where members learned about music collaboration techniques and worked directly with Bema Music on creative projects.",
+      date: "2025-10-15",
+      time: "6:00 PM EST",
+      location: "Studio Stream",
+      attendees: 456,
       isLive: false,
       isUpcoming: false,
-      category: "Education",
-      level: "New Members",
-      tags: ["Onboarding", "Introduction", "Echo Loop"],
+      category: "Workshop",
+      level: "Pro & Ambassador",
+      tags: ["Collaboration", "Workshop", "Creative"],
+      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80"
+    },
+    {
+      id: 7,
+      title: "Community Q&A Session",
+      description: "Recent community session where members asked questions directly to Bema Music about upcoming projects and the creative process.",
+      date: "2025-10-08",
+      time: "7:00 PM EST",
+      location: "Live Stream",
+      attendees: 789,
+      isLive: false,
+      isUpcoming: false,
+      category: "Community",
+      level: "All Members",
+      tags: ["Q&A", "Community", "Discussion"],
       image: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80"
+    },
+    {
+      id: 8,
+      title: "Behind the Music: Album Deep Dive",
+      description: "Past session exploring the stories and inspiration behind Bema Music's latest album tracks.",
+      date: "2025-09-25",
+      time: "8:00 PM EST",
+      location: "Studio Stream",
+      attendees: 623,
+      isLive: false,
+      isUpcoming: false,
+      category: "Deep Dive",
+      level: "All Members",
+      tags: ["Album", "Stories", "Behind the Scenes"],
+      image: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80"
     }
   ];
 
@@ -130,16 +130,16 @@ export function LiveSessionsSection() {
       case 'live':
         return liveEvents;
       case 'upcoming':
-        return upcomingEvents.slice(0, 2);
+        return upcomingEvents.slice(0, 3);
       case 'recent':
-        return pastEvents.slice(0, 2);
+        return pastEvents.slice(0, 3);
       default:
         return [];
     }
   };
 
   const eventsToShow = getEventsToShow();
-  const showAsSlider = viewMode === 'live' && liveEvents.length > 1;
+  const showAsSlider = viewMode === 'live' && liveEvents.length > 0;
 
   useEffect(() => {
     if (liveEvents.length > 0) {

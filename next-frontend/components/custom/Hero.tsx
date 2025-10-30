@@ -9,17 +9,17 @@ import { useState, useEffect } from "react";
 const heroSlides = [
   {
     title: "Join the Echo Loop",
-    subtitle: "Connect directly with Bema Music through exclusive campaigns, live sessions, and our revolutionary referral ecosystem",
+    subtitle: "Connect with faith-driven artists and help them share their music with people who will actually appreciate it",
     gradient: "from-blue-900 via-blue-800 to-pink-900"
   },
   {
     title: "Exclusive Live Sessions",
-    subtitle: "Experience intimate performances and behind-the-scenes content with direct artist interaction",
+    subtitle: "Get access to intimate performances and behind-the-scenes content you won't find anywhere else",
     gradient: "from-purple-900 via-blue-900 to-indigo-900"
   },
   {
-    title: "Earn Through Referrals",
-    subtitle: "Build the community and unlock exclusive rewards through our innovative Echo Loop system",
+    title: "Support Real Artists",
+    subtitle: "Help independent faith-based musicians grow their audience and make a living doing what they love",
     gradient: "from-indigo-900 via-purple-900 to-pink-900"
   }
 ];

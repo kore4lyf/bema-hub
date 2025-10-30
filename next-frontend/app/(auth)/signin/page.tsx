@@ -75,7 +75,7 @@ function SignInContent() {
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="Enter email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
@@ -92,6 +92,7 @@ function SignInContent() {
             <Input
               id="password"
               type="password"
+              placeholder="Enter password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required

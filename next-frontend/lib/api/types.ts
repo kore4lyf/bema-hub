@@ -186,4 +186,4 @@ export interface ProfileResponse {
   bema_facebook_id?: string
   bema_twitter_id?: string
   role: string
-}}
+}

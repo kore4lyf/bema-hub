@@ -7,8 +7,6 @@ const protectedRoutes = [
   '/profile',
   '/events',
   '/campaigns',
-  '/leaderboard',
-  '/contact'
 ];
 
 // Define which routes are auth-only (accessible only when NOT authenticated)
@@ -56,7 +54,6 @@ export const config = {
     '/events/:path*',
     '/campaigns/:path*',
     '/leaderboard/:path*',
-    '/contact/:path*',
     '/signin',
     '/signup/:path*',
     '/reset-password/:path*'

@@ -9,20 +9,20 @@ export function FAQSection() {
 
   const faqs = [
     {
-      question: "How do I join a membership?",
-      answer: "Getting started is easy! Simply click the 'Join Now' button and follow the registration process. You'll be able to choose from our different membership tiers based on your needs."
+      question: "What is BemaHub?",
+      answer: "BemaHub is a community platform that helps faith-driven artists connect with listeners who truly appreciate their message. We focus on building genuine relationships rather than chasing algorithms."
     },
     {
-      question: "What is Echo Loop?",
-      answer: "Echo Loop is our innovative system that connects artists directly with their supporters, allowing for meaningful engagement and sustainable revenue sharing. It ensures artists retain ownership of their data and earnings."
+      question: "How does BemaHub work?",
+      answer: "Artists share their music and stories with our community. Listeners discover new artists, support their work, and help them grow. It's about real people supporting real artists, not faceless algorithms."
     },
     {
-      question: "How are my donations processed?",
-      answer: "We use secure payment processors like PayPal and Stripe to handle donations. All transactions are encrypted and your financial information is never stored on our servers."
+      question: "What makes BemaHub different?",
+      answer: "We're not trying to be the biggest music platform. We're focused on creating meaningful connections between faith-driven artists and people who share their values. Quality over quantity."
     },
     {
-      question: "Can I refer friends and earn rewards?",
-      answer: "Yes! Our referral program allows you to invite friends to join Bema Hub. When they sign up through your referral link, you'll both receive benefits based on their membership tier."
+      question: "How can I support artists on BemaHub?",
+      answer: "You can support artists by listening to their music, sharing their content, participating in their campaigns, and connecting with them directly. Every interaction helps them reach more people who will appreciate their work."
     }
   ];
 

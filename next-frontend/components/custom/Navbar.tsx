@@ -10,14 +10,20 @@ import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { setTheme as setReduxTheme } from "@/lib/features/ui/uiSlice";
 import { signOut } from "@/lib/features/auth/authSlice";
+import Logo from "./Logo";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
   const dispatch = useAppDispatch();
   const { theme: reduxTheme } = useAppSelector((state) => state.ui);
-  const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (theme && theme !== reduxTheme) {
@@ -46,29 +52,34 @@ export function Navbar() {
     { name: "Contact", href: "/contact" },
   ];
 
+  const protectedNavRoutesName = [ "Events", "Campaigns" ]
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6 mx-auto">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold">Bema Hub</span>
+            <Logo size="75"/> 
           </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
         </div>
+
+        <nav className="hidden md:flex items-center gap-6">
+          {navItems.map((item) => {
+              if (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) {
+
+                return (<Link
+              key={item.name}
+              href={item.href}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              {item.name}
+            </Link>)}
+          })}
+        </nav>
 
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === "dark" ? (
+            {mounted && theme === "dark" ? (
               <Sun className="h-5 w-5" />
             ) : (
               <Moon className="h-5 w-5" />
@@ -76,9 +87,7 @@ export function Navbar() {
             <span className="sr-only">Toggle theme</span>
           </Button>
 
-          {isLoading ? (
-            <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
-          ) : isAuthenticated && user ? (
+          {isAuthenticated && user ? (
             <div className="relative">
               <Button
                 variant="ghost"
@@ -145,16 +154,20 @@ export function Navbar() {
       {isMenuOpen && (
         <div className="container max-w-7xl md:hidden px-4 pb-4 mx-auto">
           <div className="flex flex-col gap-2 pt-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              if (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) {
+
+                return (<Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                  >
+                  {item.name}
+                </Link>
+                )
+              }
+            })}
             {!isAuthenticated && (
               <>
                 <Link href="/signin" onClick={() => setIsMenuOpen(false)}>

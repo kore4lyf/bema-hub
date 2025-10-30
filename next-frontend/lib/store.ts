@@ -7,10 +7,10 @@ import { locationApi } from './api/locationApi';
 import { bemaHubApi } from './api/bemaHubApi';
 import { blogApi } from './api/blogApi';
 
-const localStorageMiddleware: Middleware = (store) => (next) => (action) => {
+const localStorageMiddleware: Middleware = (store) => (next) => (action: any) => {
   const result = next(action);
   
-  if (action.type.startsWith('auth/')) {
+  if (action.type?.startsWith('auth/')) {
     const { auth } = store.getState() as RootState;
     localStorage.setItem('authData', JSON.stringify(auth));
     

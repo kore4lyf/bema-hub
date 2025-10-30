@@ -134,7 +134,7 @@ function EventsContent() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <main className="min-h-screen w-full bg-background">
         <div className="container py-12 px-4 sm:px-6 mx-auto">
           <div className="mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
@@ -287,7 +287,7 @@ function EventsContent() {
                   <div className="space-y-4">
                     {liveEvents.filter(event => event.isUpcoming).slice(0, 3).map((event) => (
                       <div key={event.id} className="flex items-center p-3 rounded-lg bg-muted/50">
-                        <div className="flex flex-col gap-2 items-center pr-3 mr-3  border-r border-gray-600  text-sm font-medium text-purple-600 min-w-[3rem]">
+                        <div className="flex flex-col gap-2 items-center pr-3 mr-3 border-r border-border text-sm font-medium text-purple-600 min-w-[3rem]">
                           <Calendar className="h-5 w-5 text-purple-600" />
                           {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
