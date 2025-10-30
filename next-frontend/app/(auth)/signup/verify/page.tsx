@@ -86,8 +86,13 @@ export default function VerifyOTPPage() {
       toast.success("Verification code sent to your email");
       setResendTimer(60); // 60 second cooldown
     } catch (err: any) {
-      // Don't show error on initial load resend attempt
-      console.log("Failed to resend code on page load:", err);
+      // Handle rate limiting gracefully on page load
+      if (err.status === 429 || err.data?.code === 'otp_request_limit_exceeded') {
+        console.log("Rate limit reached on page load:", err.data?.message);
+        // Don't show error toast on page load for rate limiting
+      } else {
+        console.log("Failed to resend code on page load:", err);
+      }
     }
   };
 
@@ -134,7 +139,12 @@ export default function VerifyOTPPage() {
       toast.success("New verification code sent to your email");
       setResendTimer(60); // 60 second cooldown
     } catch (err: any) {
-      toast.error(err.data?.message || "Failed to resend code");
+      // Handle rate limiting (HTTP 429) with precise time formatting
+      if (err.status === 429 || err.data?.code === 'otp_request_limit_exceeded') {
+        toast.error(err.data?.message || "Too many requests. Please try again later.");
+      } else {
+        toast.error(err.data?.message || "Failed to resend code");
+      }
     }
   };
 

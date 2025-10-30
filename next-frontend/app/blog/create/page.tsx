@@ -10,12 +10,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategorySelector } from "@/components/blog/CategorySelector";
 import { WordPressEditor } from "@/components/blog/WordPressEditor";
-import { ArrowLeft, Save, Eye, Settings } from "lucide-react";
+import { ArrowLeft, Save, Eye, Settings, Loader2, CheckCircle, AlertCircle, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCreatePostMutation } from "@/lib/api/blogApi";
+import { useAppSelector } from "@/lib/hooks";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
+import { useState, useEffect } from "react";
 
 interface FormData {
   title: string;
@@ -27,7 +32,9 @@ interface FormData {
 
 export default function CreateBlogPage() {
   const router = useRouter();
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [createPost, { isLoading }] = useCreatePostMutation();
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const { control, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     defaultValues: {
@@ -42,20 +49,49 @@ export default function CreateBlogPage() {
   const watchedData = watch();
 
   const onSubmit = async (data: FormData) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to create posts");
+      router.push('/signin');
+      return;
+    }
+
+    setSaveStatus('saving');
     try {
       const postData = {
         title: data.title.trim(),
         content: data.content.trim(),
         excerpt: data.excerpt.trim() || undefined,
         status: data.status,
-        categories: data.category ? [parseInt(data.category)] : undefined,
+        categories: data.category && data.category !== 'none' ? [parseInt(data.category)] : undefined,
       };
 
       const result = await createPost(postData).unwrap();
+      setSaveStatus('saved');
       toast.success(`Post ${data.status === 'publish' ? 'published' : 'saved'} successfully!`);
-      router.push(`/blog/${result.slug}`);
-    } catch (error) {
-      toast.error('Failed to create post');
+      
+      // Navigate after brief delay to show success state
+      setTimeout(() => {
+        router.push(`/blog/${result.slug}`);
+      }, 1000);
+    } catch (error: any) {
+      setSaveStatus('error');
+      console.error('Failed to create post:', error);
+      
+      // Better error messages based on error type
+      let errorMessage = 'Failed to create post';
+      if (error?.status === 401) {
+        errorMessage = 'Authentication required. Please sign in again.';
+        router.push('/signin');
+      } else if (error?.status === 403) {
+        errorMessage = 'You do not have permission to create posts.';
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      }
+      
+      toast.error(errorMessage);
+      
+      // Reset status after showing error
+      setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
 

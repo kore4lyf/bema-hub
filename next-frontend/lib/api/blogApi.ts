@@ -49,6 +49,37 @@ export interface CreatePostData {
   featured_media?: number;
 }
 
+export interface Comment {
+  id: number;
+  post?: number;
+  parent: number;
+  author: number;
+  author_name: string;
+  author_email?: string;
+  author_url?: string;
+  author_avatar_urls: Record<string, string>;
+  date: string;
+  date_gmt?: string;
+  content: {
+    rendered: string;
+  };
+  status?: 'approved' | 'hold' | 'spam' | 'trash';
+  type?: string;
+  author_user_agent?: string;
+  meta?: any[];
+  _links?: any;
+  link?: string;
+  // Additional fields for role detection
+  author_role?: 'subscriber' | 'administrator';
+}
+
+export interface CreateCommentData {
+  post: number;
+  parent?: number;
+  content: string;
+  // For authenticated users, WordPress will automatically use the logged-in user's details
+}
+
 export const blogApi = createApi({
   reducerPath: 'blogApi',
   baseQuery: fetchBaseQuery({
@@ -61,7 +92,7 @@ export const blogApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['BlogPost', 'BlogCategory'],
+  tagTypes: ['BlogPost', 'BlogCategory', 'Comment'],
   endpoints: (builder) => ({
     // Get all posts with filters
     getPosts: builder.query<BlogPost[], {
@@ -167,6 +198,42 @@ export const blogApi = createApi({
         `/posts?meta_key=featured&meta_value=1&per_page=${per_page}&_embed=true`,
       providesTags: ['BlogPost'],
     }),
+
+    // Get comments for a post
+    getComments: builder.query<Comment[], { post: number; per_page?: number; order?: 'asc' | 'desc' }>({
+      query: ({ post, per_page = 50, order = 'asc' }) => 
+        `/comments?post=${post}&per_page=${per_page}&order=${order}`,
+      providesTags: (result, error, { post }) => 
+        result ? [{ type: 'Comment' as const, id: post }] : [],
+    }),
+
+    // Create a comment
+    createComment: builder.mutation<Comment, CreateCommentData>({
+      query: (data) => ({
+        url: '/comments',
+        method: 'POST',
+        body: data,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      invalidatesTags: (result) => 
+        result ? [{ type: 'Comment' as const, id: result.post }] : [],
+    }),
+
+    // Reply to a comment
+    replyToComment: builder.mutation<Comment, CreateCommentData>({
+      query: (data) => ({
+        url: '/comments',
+        method: 'POST',
+        body: data,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      invalidatesTags: (result) => 
+        result ? [{ type: 'Comment' as const, id: result.post }] : [],
+    }),
   }),
 });
 
@@ -180,4 +247,7 @@ export const {
   useDeletePostMutation,
   useSearchPostsQuery,
   useGetFeaturedPostsQuery,
+  useGetCommentsQuery,
+  useCreateCommentMutation,
+  useReplyToCommentMutation,
 } = blogApi;

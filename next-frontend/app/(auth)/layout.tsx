@@ -12,7 +12,7 @@ export default function AuthLayout({
         {children}
       </>
 
-      <div className="hidden lg:flex items-center justify-center relative bg-muted">
+      <div className="hidden lg:flex items-center justify-left relative bg-muted">
         <img 
           src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1200&q=80" 
           alt="Artist community" 
@@ -23,9 +23,8 @@ export default function AuthLayout({
           <Link href="/" className="text-4xl font-bold block mb-4">
             <Logo size="100" theme="light" />
           </Link>
-          <h2 className="text-3xl font-bold mb-4">Join Us</h2>
           <p className="text-lg opacity-90">
-            Connect with Bema Music through exclusive campaigns, live sessions.
+            Connect with Bema Music through exclusive campaigns, live sessions, and more.
           </p>
         </div>
       </div>

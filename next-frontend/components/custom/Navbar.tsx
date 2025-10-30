@@ -11,6 +11,8 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { setTheme as setReduxTheme } from "@/lib/features/ui/uiSlice";
 import { signOut } from "@/lib/features/auth/authSlice";
 import Logo from "./Logo";
+import { AnimatedBackground } from '@/components/core/animated-background';
+
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -52,7 +54,7 @@ export function Navbar() {
     { name: "Contact", href: "/contact" },
   ];
 
-  const protectedNavRoutesName = [ "Events", "Campaigns" ]
+  const protectedNavRoutesName = [ "Events", "Campaigns", "Leaderboard" ]
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -65,7 +67,7 @@ export function Navbar() {
 
         <nav className="hidden md:flex items-center gap-6">
           {navItems.map((item) => {
-              if (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) {
+              if (!isAuthenticated && !protectedNavRoutesName.includes(item.name) || isAuthenticated) {
 
                 return (<Link
               key={item.name}
