@@ -12,7 +12,8 @@ import Link from "next/link";
 import { useGetPostBySlugQuery, useGetPostsQuery } from "@/lib/api/blogApi";
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const { data: post, isLoading, error } = useGetPostBySlugQuery(params.slug);
+  const { slug } = params;
+  const { data: post, isLoading, error } = useGetPostBySlugQuery(slug);
   const { data: relatedPosts = [] } = useGetPostsQuery({ per_page: 3, _embed: true });
 
   const getPostImage = (post: any) => {

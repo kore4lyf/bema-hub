@@ -1,26 +1,27 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
+import { ThreeDMarquee } from "@/components/ui/3d-marquee"
 import { Music, Radio, Users2, Crown, ChevronLeft, ChevronRight } from "lucide-react";
-import Link from "next/link";
+// import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
 import { useState, useEffect } from "react";
+import { heroImages } from "@/assets/images/hero/heroImages";
+import { blurIn, fadeIn, staggerContainer } from "@/utils/variants"
+import { TextRoll } from "../motion-primitives/text-roll";
 
 const heroSlides = [
   {
     title: "Join the Echo Loop",
-    subtitle: "Connect with faith-driven artists and help them share their music with people who will actually appreciate it",
-    gradient: "from-blue-900 via-blue-800 to-pink-900"
+    subtitle: "Connect with faith-driven artists and help them share their music with people who will actually appreciate it"
   },
   {
     title: "Exclusive Live Sessions",
-    subtitle: "Get access to intimate performances and behind-the-scenes content you won't find anywhere else",
-    gradient: "from-purple-900 via-blue-900 to-indigo-900"
+    subtitle: "Get access to intimate performances and behind-the-scenes content you won't find anywhere else"
   },
   {
     title: "Support Real Artists",
-    subtitle: "Help independent faith-based musicians grow their audience and make a living doing what they love",
-    gradient: "from-indigo-900 via-purple-900 to-pink-900"
+    subtitle: "Help independent faith-based musicians grow their audience and make a living doing what they love"
   }
 ];
 
@@ -35,23 +36,28 @@ export function Hero() {
     return () => clearInterval(timer);
   }, []);
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  // const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+  // const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
 
   return (
-    <section className={`relative overflow-hidden py-24 md:py-32 bg-gradient-to-br ${heroSlides[currentSlide].gradient} transition-all duration-1000`}>
-      <div className="absolute inset-0 opacity-40"></div>
+    <section className={`relative min-h-screen overflow-hidden py-24 md:py-32 bg-background`}>
+      
+      {/* overlay */}
+      <div className="pointer-events-none absolute inset-0 z-10 h-full w-full bg-black/40" />
+      <ThreeDMarquee
+          className="absolute inset-0 h-full w-full" 
+          images={heroImages} />
       
       <div className="container relative z-10 px-4 sm:px-6 mx-auto">
         <div className="mx-auto max-w-5xl text-center">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
-            {heroSlides[currentSlide].title.includes("Echo Loop") ? (
-              <>
-                Join the <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Echo Loop</span>
-              </>
-            ) : (
-              heroSlides[currentSlide].title
-            )}
+              {heroSlides[currentSlide].title.includes("Echo Loop") ? (
+                <>
+                  Join the <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Echo Loop</span>
+                </>
+              ) : (
+                heroSlides[currentSlide].title
+              )}
           </h1>
           
           <p className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto mb-8">
@@ -63,11 +69,11 @@ export function Hero() {
               <Radio className="h-8 w-8 text-blue-400 mx-auto mb-2" />
               <p className="text-white/90 font-medium">Live Sessions</p>
             </div>
-            <div className="p-4">
+            <div className="p-4  md:translate-y-14">
               <Users2 className="h-8 w-8 text-green-400 mx-auto mb-2" />
               <p className="text-white/90 font-medium">Campaigns</p>
             </div>
-            <div className="p-4">
+            <div className="p-4  md:translate-y-14">
               <Crown className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
               <p className="text-white/90 font-medium">Ambassador</p>
             </div>
@@ -77,7 +83,7 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="flex flex-row gap-4 justify-center mb-8">
+          {/* <div className="flex flex-row gap-4 justify-center mb-8">
               <Link href="/signup">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 py-3 text-lg">
                   Sign Up
@@ -88,8 +94,9 @@ export function Hero() {
                 Sign In
               </Button>
             </Link>
-          </div>
+          </div> */}
 
+          {/* Slide Navigation Controller */}
           {/* <div className="flex items-center justify-center gap-4">
             <button onClick={prevSlide} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
               <ChevronLeft className="h-5 w-5 text-white" />
@@ -111,6 +118,7 @@ export function Hero() {
           </div> */}
         </div>
       </div>
+
     </section>
   );
 }

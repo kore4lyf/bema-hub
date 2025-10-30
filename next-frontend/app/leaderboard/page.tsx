@@ -12,6 +12,8 @@ import {
   ArrowDown,
   Minus
 } from "lucide-react";
+import { Navbar } from "@/components/custom/Navbar";
+import { Footer } from "@/components/custom/Footer";
 
 // Mock data for leaderboard
 const leaderboardData = [
@@ -138,6 +140,8 @@ export default function LeaderboardPage() {
   };
 
   return (
+    <>
+    <Navbar />
     <div className="min-h-screen bg-background">
       <div className="container py-8 px-4 sm:px-6 mx-auto">
         <div className="mb-8">
@@ -313,5 +317,7 @@ export default function LeaderboardPage() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

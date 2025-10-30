@@ -171,9 +171,9 @@ function EventsContent() {
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary">{event.category}</Badge>
                             {event.isLive && (
-                              <Badge className="bg-red-500 hover:bg-red-500 animate-pulse">
+                              <Badge className="bg-red-500 hover:bg-red-500 animate-pulse text-white">
                                 <Radio className="h-3 w-3 mr-1" />
-                                LIVE NOW
+                                Live
                               </Badge>
                             )}
                             {event.level === "Ambassador Only" && (
@@ -228,7 +228,7 @@ function EventsContent() {
                           {event.isLive ? (
                             <Button className="bg-red-500 hover:bg-red-600 text-white">
                               <Play className="mr-2 h-4 w-4" />
-                              Join Live Now
+                              Join
                             </Button>
                           ) : event.isUpcoming ? (
                             <Button className="bg-purple-600 hover:bg-purple-700 text-white">

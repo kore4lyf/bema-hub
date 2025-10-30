@@ -95,34 +95,34 @@ export const blogApi = createApi({
         if (params.status) searchParams.append('status', params.status);
         if (params._embed) searchParams.append('_embed', 'true');
         
-        return `/wp-json/wp/v2/posts?${searchParams.toString()}`;
+        return `/posts?${searchParams.toString()}`;
       },
       providesTags: ['BlogPost'],
     }),
 
     // Get single post by slug
     getPostBySlug: builder.query<BlogPost, string>({
-      query: (slug) => `/wp-json/wp/v2/posts?slug=${slug}&_embed=true`,
+      query: (slug) => `/posts?slug=${slug}&_embed=true`,
       transformResponse: (response: BlogPost[]) => response[0],
       providesTags: (result) => result ? [{ type: 'BlogPost', id: result.id }] : [],
     }),
 
     // Get single post by ID
     getPost: builder.query<BlogPost, number>({
-      query: (id) => `/wp-json/wp/v2/posts/${id}?_embed=true`,
+      query: (id) => `/posts/${id}?_embed=true`,
       providesTags: (result) => result ? [{ type: 'BlogPost', id: result.id }] : [],
     }),
 
     // Get categories
     getCategories: builder.query<BlogCategory[], void>({
-      query: () => '/wp-json/wp/v2/categories?per_page=100',
+      query: () => '/categories?per_page=100',
       providesTags: ['BlogCategory'],
     }),
 
     // Create new post
     createPost: builder.mutation<BlogPost, CreatePostData>({
       query: (data) => ({
-        url: '/wp-json/wp/v2/posts',
+        url: '/posts',
         method: 'POST',
         body: data,
         headers: {
@@ -135,7 +135,7 @@ export const blogApi = createApi({
     // Update post
     updatePost: builder.mutation<BlogPost, { id: number; data: Partial<CreatePostData> }>({
       query: ({ id, data }) => ({
-        url: `/wp-json/wp/v2/posts/${id}`,
+        url: `/posts/${id}`,
         method: 'POST',
         body: data,
         headers: {
@@ -148,7 +148,7 @@ export const blogApi = createApi({
     // Delete post
     deletePost: builder.mutation<{ deleted: boolean }, number>({
       query: (id) => ({
-        url: `/wp-json/wp/v2/posts/${id}`,
+        url: `/posts/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['BlogPost'],

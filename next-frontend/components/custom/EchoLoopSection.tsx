@@ -8,11 +8,11 @@ import Link from "next/link";
 
 export function EchoLoopSection() {
   return (
-    <section className="py-20 bg-background">
+    <section className="py-20">
       <div className="container px-4 sm:px-6 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Community <span className="text-blue-600">Membership</span>
+            Community
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             BemaHub helps faith-driven artists connect with listeners who truly get their message. 
@@ -21,14 +21,14 @@ export function EchoLoopSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-16">
-          <Card className="relative overflow-hidden border-2 border-blue-200 dark:border-blue-800">
-            <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 text-sm font-medium">
+          <Card className="relative overflow-hidden border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-800/10">
+            <div className="absolute top-0 rounded-bl-lg right-0 bg-blue-600 text-white px-3 py-1 text-sm font-medium">
               Pro Level
             </div>
             <CardContent className="p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                  <Star className="h-6 w-6 text-blue-600" />
+                  <Star className="h-6 w-6 text-blue-400" />
                 </div>
                 <h3 className="text-2xl font-bold">Pro Member</h3>
               </div>
@@ -56,14 +56,14 @@ export function EchoLoopSection() {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-2 border-purple-200 dark:border-purple-800">
-            <div className="absolute top-0 right-0 bg-purple-600 text-white px-3 py-1 text-sm font-medium">
+          <Card className="relative overflow-hidden border-2 bg-purple-100 dark:bg-purple-800/10 border-purple-200 dark:border-purple-800">
+            <div className="absolute top-0 rounded-bl-lg right-0 bg-purple-600 text-white px-3 py-1 text-sm font-medium">
               VIP Access
             </div>
             <CardContent className="p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
-                  <Star className="h-6 w-6 text-purple-600" />
+                  <Star className="h-6 w-6 text-purple-400" />
                 </div>
                 <h3 className="text-2xl font-bold">VIP Member</h3>
               </div>
@@ -92,7 +92,7 @@ export function EchoLoopSection() {
           </Card>
 
           <Card className="relative overflow-hidden border-2 border-gold-200 dark:border-yellow-600 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950">
-            <div className="absolute top-0 right-0 bg-yellow-600 text-white px-3 py-1 text-sm font-medium">
+            <div className="absolute top-0 rounded-bl-lg right-0 bg-yellow-600 text-white px-3 py-1 text-sm font-medium">
               Ambassador
             </div>
             <CardContent className="p-8">

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Phone, Clock, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Clock, Send, Twitter, Instagram, Facebook, Youtube } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -134,6 +134,29 @@ function ContactContent() {
                       </div>
                     </a>
                   ))}
+                </div>
+              </div>
+
+
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Follow Us</h3>
+                <div className="flex gap-4">
+                  <Button variant="outline" size="icon">
+                    <span className="sr-only">Twitter</span>
+                    <Twitter/>
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <span className="sr-only">Instagram</span>
+                    <Instagram/>
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <span className="sr-only">Facebook</span>
+                    <Facebook/>
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <span className="sr-only">YouTube</span>
+                    <Youtube/>
+                  </Button>
                 </div>
               </div>
 
