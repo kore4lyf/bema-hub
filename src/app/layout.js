@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/component/header";
 import HeroSection from "@/component/HeroSection";
 import PlatformSection from "@/component/PlatformSection";
+import InsightsSection from "@/component/InsightSection";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({children}) {
         <Header/>
         <HeroSection/>
         <PlatformSection/>
+        <InsightsSection/>
         <main>{children}</main>
         </body>
         </html>

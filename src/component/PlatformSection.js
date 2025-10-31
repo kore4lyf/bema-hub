@@ -14,7 +14,7 @@ export default function PlatformSection() {
         </div>
 
         {/* Feature Cards Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-1 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
           {/* Card 1 - Campaigns */}
           <div className="bg-neutral-900 rounded-3xl overflow-hidden group hover:bg-neutral-800 transition-colors flex flex-col">
             <div className="p-8 md:p-10 flex flex-col justify-between flex-grow">
