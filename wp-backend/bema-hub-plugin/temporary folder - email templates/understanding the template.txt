@@ -1,0 +1,449 @@
+<?php
+/**
+ * ===============================================
+ * EMAIL TEMPLATES PHP INTEGRATION GUIDE
+ * ===============================================
+ * 
+ * This guide shows you how to use the email templates
+ * with PHP and replace placeholders with actual data.
+ */
+
+// ===============================================
+// BASIC EMAIL FUNCTION
+// ===============================================
+
+/**
+ * Load an email template and replace placeholders
+ * 
+ * @param string $templateFile Path to template file
+ * @param array $replacements Array of placeholder => value pairs
+ * @return string Processed email HTML
+ */
+function loadEmailTemplate($templateFile, $replacements = []) {
+    // Load the template file
+    $template = file_get_contents($templateFile);
+    
+    // Replace all placeholders
+    foreach ($replacements as $placeholder => $value) {
+        $template = str_replace('{{' . $placeholder . '}}', $value, $template);
+    }
+    
+    return $template;
+}
+
+/**
+ * Send email using PHP mail function
+ * 
+ * @param string $to Recipient email
+ * @param string $subject Email subject
+ * @param string $htmlContent HTML content
+ * @param string $fromEmail Sender email
+ * @param string $fromName Sender name
+ * @return bool Success status
+ */
+function sendEmail($to, $subject, $htmlContent, $fromEmail, $fromName) {
+    $headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+    $headers .= "From: $fromName <$fromEmail>" . "\r\n";
+    
+    return mail($to, $subject, $htmlContent, $headers);
+}
+
+
+// ===============================================
+// EXAMPLE 1: PASSWORD RESET EMAIL
+// ===============================================
+
+function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
+    // Your company information
+    $companyInfo = [
+        'LOGO_URL' => 'https://yourcompany.com/logo.png',
+        'COMPANY_NAME' => 'Your Company Name',
+        'COMPANY_ADDRESS' => '1922 McWhorter Road, FL 11223',
+        'COMPANY_PHONE' => '+111 222 333',
+        'COMPANY_EMAIL' => 'info@company.com',
+        'FACEBOOK_URL' => 'https://facebook.com/yourcompany',
+        'TWITTER_URL' => 'https://twitter.com/yourcompany',
+        'INSTAGRAM_URL' => 'https://instagram.com/yourcompany',
+        'LINKEDIN_URL' => 'https://linkedin.com/company/yourcompany'
+    ];
+    
+    // Generate reset link
+    $resetLink = "https://yourwebsite.com/reset-password.php?token=" . $resetToken;
+    
+    // Prepare replacements
+    $replacements = array_merge($companyInfo, [
+        'USER_NAME' => htmlspecialchars($userName),
+        'RESET_LINK' => $resetLink
+    ]);
+    
+    // Load and process template
+    $emailContent = loadEmailTemplate('templates/password-reset.html', $replacements);
+    
+    // Send email
+    return sendEmail(
+        $userEmail,
+        'Reset Your Password',
+        $emailContent,
+        'noreply@yourcompany.com',
+        'Your Company Name'
+    );
+}
+
+// Usage example:
+// sendPasswordResetEmail('user@example.com', 'John Doe', 'abc123token456');
+
+
+// ===============================================
+// EXAMPLE 2: TWO-FACTOR AUTHENTICATION (OTP)
+// ===============================================
+
+function sendOTPEmail($userEmail, $userName, $otpCode, $expiryMinutes = 10) {
+    // Your company information
+    $companyInfo = [
+        'LOGO_URL' => 'https://yourcompany.com/logo.png',
+        'COMPANY_NAME' => 'Your Company Name',
+        'COMPANY_ADDRESS' => '1922 McWhorter Road, FL 11223',
+        'COMPANY_PHONE' => '+111 222 333',
+        'COMPANY_EMAIL' => 'info@company.com'
+    ];
+    
+    // Prepare replacements
+    $replacements = array_merge($companyInfo, [
+        'USER_NAME' => htmlspecialchars($userName),
+        'OTP_CODE' => $otpCode,
+        'EXPIRY_TIME' => $expiryMinutes
+    ]);
+    
+    // Load and process template
+    $emailContent = loadEmailTemplate('templates/otp.html', $replacements);
+    
+    // Send email
+    return sendEmail(
+        $userEmail,
+        'Your Verification Code',
+        $emailContent,
+        'noreply@yourcompany.com',
+        'Your Company Name'
+    );
+}
+
+// Usage example with OTP generation:
+function generateAndSendOTP($userEmail, $userName) {
+    // Generate 6-digit OTP
+    $otp = sprintf("%06d", mt_rand(0, 999999));
+    
+    // Store OTP in database with expiry time
+    // storeOTPInDatabase($userEmail, $otp, time() + (10 * 60)); // 10 minutes
+    
+    // Send email
+    return sendOTPEmail($userEmail, $userName, $otp, 10);
+}
+
+// Usage:
+// generateAndSendOTP('user@example.com', 'John Doe');
+
+
+// ===============================================
+// EXAMPLE 3: PASSWORD CHANGED SUCCESSFULLY
+// ===============================================
+
+function sendPasswordChangedEmail($userEmail, $userName) {
+    // Your company information
+    $companyInfo = [
+        'LOGO_URL' => 'https://yourcompany.com/logo.png',
+        'COMPANY_NAME' => 'Your Company Name',
+        'COMPANY_ADDRESS' => '1922 McWhorter Road, FL 11223',
+        'COMPANY_PHONE' => '+111 222 333',
+        'COMPANY_EMAIL' => 'info@company.com',
+        'SUPPORT_LINK' => 'https://yourwebsite.com/support'
+    ];
+    
+    // Get user's info
+    $changeDateTime = date('F j, Y, g:i a'); // e.g., "October 30, 2025, 3:45 pm"
+    $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+    
+    // Parse device info from user agent (simplified)
+    $deviceInfo = getDeviceInfo($userAgent);
+    
+    // Prepare replacements
+    $replacements = array_merge($companyInfo, [
+        'USER_NAME' => htmlspecialchars($userName),
+        'CHANGE_DATETIME' => $changeDateTime,
+        'IP_ADDRESS' => $ipAddress,
+        'DEVICE_INFO' => htmlspecialchars($deviceInfo)
+    ]);
+    
+    // Load and process template
+    $emailContent = loadEmailTemplate('templates/password-changed.html', $replacements);
+    
+    // Send email
+    return sendEmail(
+        $userEmail,
+        'Password Changed Successfully',
+        $emailContent,
+        'noreply@yourcompany.com',
+        'Your Company Name'
+    );
+}
+
+/**
+ * Extract device information from user agent
+ */
+function getDeviceInfo($userAgent) {
+    // Simplified device detection
+    if (preg_match('/Mobile|Android|iPhone|iPad/', $userAgent)) {
+        if (strpos($userAgent, 'iPhone') !== false) {
+            return 'iPhone';
+        } elseif (strpos($userAgent, 'iPad') !== false) {
+            return 'iPad';
+        } elseif (strpos($userAgent, 'Android') !== false) {
+            return 'Android Device';
+        }
+        return 'Mobile Device';
+    } elseif (strpos($userAgent, 'Windows') !== false) {
+        return 'Windows PC';
+    } elseif (strpos($userAgent, 'Mac') !== false) {
+        return 'Mac';
+    } elseif (strpos($userAgent, 'Linux') !== false) {
+        return 'Linux';
+    }
+    return 'Unknown Device';
+}
+
+// Usage example:
+// sendPasswordChangedEmail('user@example.com', 'John Doe');
+
+
+// ===============================================
+// ADVANCED: USING PHPMailer (RECOMMENDED)
+// ===============================================
+
+/**
+ * Send email using PHPMailer (better than mail())
+ * Install via: composer require phpmailer/phpmailer
+ */
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+function sendEmailWithPHPMailer($to, $toName, $subject, $htmlContent) {
+    $mail = new PHPMailer(true);
+    
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com'; // Your SMTP server
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'your-email@gmail.com'; // Your email
+        $mail->Password   = 'your-app-password'; // Your app password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+        
+        // Recipients
+        $mail->setFrom('noreply@yourcompany.com', 'Your Company Name');
+        $mail->addAddress($to, $toName);
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlContent;
+        $mail->AltBody = strip_tags($htmlContent); // Plain text for non-HTML clients
+        
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Email could not be sent. Mailer Error: {$mail->ErrorInfo}");
+        return false;
+    }
+}
+
+// Updated function using PHPMailer
+function sendPasswordResetWithPHPMailer($userEmail, $userName, $resetToken) {
+    $companyInfo = [
+        'LOGO_URL' => 'https://yourcompany.com/logo.png',
+        'COMPANY_NAME' => 'Your Company Name',
+        'COMPANY_ADDRESS' => '1922 McWhorter Road, FL 11223',
+        'COMPANY_PHONE' => '+111 222 333',
+        'COMPANY_EMAIL' => 'info@company.com',
+        'FACEBOOK_URL' => 'https://facebook.com/yourcompany',
+        'TWITTER_URL' => 'https://twitter.com/yourcompany',
+        'INSTAGRAM_URL' => 'https://instagram.com/yourcompany',
+        'LINKEDIN_URL' => 'https://linkedin.com/company/yourcompany'
+    ];
+    
+    $resetLink = "https://yourwebsite.com/reset-password.php?token=" . $resetToken;
+    
+    $replacements = array_merge($companyInfo, [
+        'USER_NAME' => htmlspecialchars($userName),
+        'RESET_LINK' => $resetLink
+    ]);
+    
+    $emailContent = loadEmailTemplate('templates/password-reset.html', $replacements);
+    
+    return sendEmailWithPHPMailer(
+        $userEmail,
+        $userName,
+        'Reset Your Password',
+        $emailContent
+    );
+}
+
+
+// ===============================================
+// TEMPLATE FILE STRUCTURE
+// ===============================================
+
+/**
+ * How to organize your template files:
+ * 
+ * project/
+ * ├── templates/
+ * │   ├── password-reset.html    (Template 1)
+ * │   ├── otp.html               (Template 2)
+ * │   └── password-changed.html  (Template 3)
+ * ├── includes/
+ * │   └── email-functions.php    (This file)
+ * └── your-script.php
+ * 
+ * To extract templates from the single HTML file:
+ * 1. Open the complete HTML file
+ * 2. Copy the table with id="template-password-reset" 
+ * 3. Save it as password-reset.html
+ * 4. Repeat for other templates (template-otp, template-password-changed)
+ */
+
+
+// ===============================================
+// PLACEHOLDER REFERENCE
+// ===============================================
+
+/**
+ * PASSWORD RESET TEMPLATE PLACEHOLDERS:
+ * - {{LOGO_URL}} - Your company logo URL
+ * - {{USER_NAME}} - Recipient's name
+ * - {{COMPANY_NAME}} - Your company name
+ * - {{RESET_LINK}} - Password reset link with token
+ * - {{COMPANY_ADDRESS}} - Company physical address
+ * - {{COMPANY_PHONE}} - Company phone number
+ * - {{COMPANY_EMAIL}} - Company email
+ * - {{FACEBOOK_URL}} - Facebook page URL
+ * - {{TWITTER_URL}} - Twitter profile URL
+ * - {{INSTAGRAM_URL}} - Instagram profile URL
+ * - {{LINKEDIN_URL}} - LinkedIn company page URL
+ * 
+ * OTP TEMPLATE PLACEHOLDERS:
+ * - {{LOGO_URL}} - Your company logo URL
+ * - {{USER_NAME}} - Recipient's name
+ * - {{COMPANY_NAME}} - Your company name
+ * - {{OTP_CODE}} - The 6-digit verification code
+ * - {{EXPIRY_TIME}} - Time in minutes until code expires
+ * - {{COMPANY_ADDRESS}} - Company physical address
+ * - {{COMPANY_PHONE}} - Company phone number
+ * - {{COMPANY_EMAIL}} - Company email
+ * 
+ * PASSWORD CHANGED TEMPLATE PLACEHOLDERS:
+ * - {{LOGO_URL}} - Your company logo URL
+ * - {{USER_NAME}} - Recipient's name
+ * - {{COMPANY_NAME}} - Your company name
+ * - {{CHANGE_DATETIME}} - Date and time of password change
+ * - {{IP_ADDRESS}} - IP address used for the change
+ * - {{DEVICE_INFO}} - Device/browser information
+ * - {{SUPPORT_LINK}} - Link to support page
+ * - {{COMPANY_ADDRESS}} - Company physical address
+ * - {{COMPANY_PHONE}} - Company phone number
+ * - {{COMPANY_EMAIL}} - Company email
+ */
+
+
+// ===============================================
+// SECURITY BEST PRACTICES
+// ===============================================
+
+/**
+ * 1. PASSWORD RESET TOKENS:
+ *    - Generate cryptographically secure random tokens
+ *    - Store hashed version in database
+ *    - Set expiration time (e.g., 1 hour)
+ *    - Delete token after successful use
+ */
+function generateSecureResetToken() {
+    return bin2hex(random_bytes(32)); // 64 character token
+}
+
+function storeResetToken($email, $token) {
+    // Hash the token before storing
+    $hashedToken = password_hash($token, PASSWORD_DEFAULT);
+    $expiry = time() + 3600; // 1 hour from now
+    
+    // Store in database
+    // UPDATE users SET reset_token = ?, reset_expiry = ? WHERE email = ?
+}
+
+/**
+ * 2. OTP GENERATION:
+ *    - Use cryptographically secure random numbers
+ *    - Set short expiration (5-10 minutes)
+ *    - Limit number of attempts
+ */
+function generateSecureOTP($length = 6) {
+    $min = pow(10, $length - 1);
+    $max = pow(10, $length) - 1;
+    return random_int($min, $max);
+}
+
+/**
+ * 3. RATE LIMITING:
+ *    - Limit password reset requests per email (e.g., 3 per hour)
+ *    - Limit OTP generation (e.g., 5 per hour)
+ */
+
+/**
+ * 4. EMAIL VALIDATION:
+ *    - Always validate email format
+ *    - Verify email exists in your database
+ */
+function isValidEmail($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+/**
+ * 5. XSS PREVENTION:
+ *    - Always use htmlspecialchars() on user input
+ *    - Already implemented in examples above
+ */
+
+
+// ===============================================
+// TESTING YOUR TEMPLATES
+// ===============================================
+
+/**
+ * Test function to preview email without sending
+ */
+function previewEmailTemplate($templateType, $sampleData) {
+    $templateFile = "templates/{$templateType}.html";
+    $html = loadEmailTemplate($templateFile, $sampleData);
+    
+    // Output to browser for preview
+    echo $html;
+    exit;
+}
+
+// Test preview:
+/*
+previewEmailTemplate('password-reset', [
+    'LOGO_URL' => 'https://yourcompany.com/logo.png',
+    'USER_NAME' => 'John Doe',
+    'COMPANY_NAME' => 'Your Company',
+    'RESET_LINK' => 'https://yourwebsite.com/reset?token=test',
+    'COMPANY_ADDRESS' => '1922 McWhorter Road, FL 11223',
+    'COMPANY_PHONE' => '+111 222 333',
+    'COMPANY_EMAIL' => 'info@company.com',
+    'FACEBOOK_URL' => '',
+    'TWITTER_URL' => '',
+    'INSTAGRAM_URL' => '',
+]);
+*/
+
+?>

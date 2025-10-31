@@ -76,6 +76,18 @@ class Bema_Hub_Admin {
 			'dashicons-email',             // Icon
 			60                             // Position
 		);
+		
+		// Load email template settings class
+		require_once plugin_dir_path( __FILE__ ) . 'class-bema-hub-email-template-settings.php';
+		$email_template_settings = new Bema_Hub_Email_Template_Settings( $this->plugin_name, $this->version );
+		\add_submenu_page(
+			'bema-hub-settings',           // Parent slug
+			'Email Templates',             // Page title
+			'Email Templates',             // Menu title
+			'manage_options',              // Capability
+			'bema-hub-email-templates',    // Menu slug
+			array($email_template_settings, 'settings_page')  // Function to render the page
+		);
 	}
 
 	/**
@@ -129,12 +141,52 @@ class Bema_Hub_Admin {
 				// Call the function to display the OTP tab content
 				$this->otp_tab_content();
 			} else {
-				// Placeholder for the General tab content
-				echo '<h3>General Settings</h3><p>Content for general plugin options will go here.</p>';
+				// Display the General tab content
+				$this->general_tab_content();
 			}
 			?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Function to display the General tab content and form
+	 *
+	 * @since    1.0.0
+	 */
+	public function general_tab_content() {
+		// Get general settings
+		$general_settings = \get_option('bema_hub_general_settings', array());
+		$frontend_base_url = isset($general_settings['frontend_base_url']) ? $general_settings['frontend_base_url'] : '';
+		?>
+		<h3>General Settings</h3>
+		<form method="post" action="options.php">
+			<?php
+			\settings_fields('bema-hub-general-group');
+			\do_settings_sections('bema-hub-general-settings');
+			?>
+			<table class="form-table">
+				<tr>
+					<th scope="row">Frontend Base URL</th>
+					<td>
+						<input type="url" name="bema_hub_general_settings[frontend_base_url]" value="<?php echo \esc_attr($frontend_base_url); ?>" class="regular-text" />
+						<p class="description">Base URL of your frontend application (e.g., https://yourapp.com)</p>
+					</td>
+				</tr>
+			</table>
+			<?php \submit_button(); ?>
+		</form>
+		<?php
+	}
+
+	/**
+	 * Register settings for the General tab
+	 *
+	 * @since    1.0.0
+	 */
+	public function register_general_settings() {
+		// Register a setting group named 'bema-hub-general-group' for the 'bema_hub_general_settings' option array
+		\register_setting('bema-hub-general-group', 'bema_hub_general_settings');
 	}
 
 	/**
@@ -183,6 +235,8 @@ class Bema_Hub_Admin {
 		\add_settings_field('otp_length', 'OTP Length', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'length']);
 		\add_settings_field('otp_max_attempts', 'Max Verification Attempts', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'max_attempts']);
 		\add_settings_field('otp_resend_delay', 'Resend Delay (seconds)', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'resend_delay']);
+		\add_settings_field('password_reset_daily_limit', 'Password Reset Daily Limit', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'password_reset_daily_limit']);
+		\add_settings_field('email_otp_daily_limit', 'Email OTP Daily Limit', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'email_otp_daily_limit']);
 	}
 
 	/**
@@ -303,6 +357,12 @@ class Bema_Hub_Admin {
 				case 'resend_delay':
 					$value = '60'; // 60 seconds
 					break;
+				case 'password_reset_daily_limit':
+					$value = '5'; // 5 requests per day
+					break;
+				case 'email_otp_daily_limit':
+					$value = '10'; // 10 requests per day
+					break;
 			}
 		}
 		
@@ -321,6 +381,12 @@ class Bema_Hub_Admin {
 				break;
 			case 'resend_delay':
 				echo '<p class="description">Delay in seconds before user can request new OTP (0-300 seconds)</p>';
+				break;
+			case 'password_reset_daily_limit':
+				echo '<p class="description">Maximum password reset requests per user per day (1-50 requests)</p>';
+				break;
+			case 'email_otp_daily_limit':
+				echo '<p class="description">Maximum email OTP requests per user per day (1-50 requests)</p>';
 				break;
 		}
 	}
@@ -412,6 +478,34 @@ class Bema_Hub_Admin {
 					'bema_hub_otp_settings',
 					'invalid_resend_delay',
 					'Invalid resend delay. Please enter a value between 0 and 300 seconds.',
+					'error'
+				);
+				return \get_option( 'bema_hub_otp_settings' ); // Return previous settings
+			}
+		}
+		
+		// Validate password reset daily limit
+		if ( isset( $input['password_reset_daily_limit'] ) ) {
+			$input['password_reset_daily_limit'] = \absint( $input['password_reset_daily_limit'] );
+			if ( $input['password_reset_daily_limit'] < 1 || $input['password_reset_daily_limit'] > 50 ) {
+				\add_settings_error(
+					'bema_hub_otp_settings',
+					'invalid_password_reset_daily_limit',
+					'Invalid password reset daily limit. Please enter a value between 1 and 50 requests.',
+					'error'
+				);
+				return \get_option( 'bema_hub_otp_settings' ); // Return previous settings
+			}
+		}
+		
+		// Validate email OTP daily limit
+		if ( isset( $input['email_otp_daily_limit'] ) ) {
+			$input['email_otp_daily_limit'] = \absint( $input['email_otp_daily_limit'] );
+			if ( $input['email_otp_daily_limit'] < 1 || $input['email_otp_daily_limit'] > 50 ) {
+				\add_settings_error(
+					'bema_hub_otp_settings',
+					'invalid_email_otp_daily_limit',
+					'Invalid email OTP daily limit. Please enter a value between 1 and 50 requests.',
 					'error'
 				);
 				return \get_option( 'bema_hub_otp_settings' ); // Return previous settings

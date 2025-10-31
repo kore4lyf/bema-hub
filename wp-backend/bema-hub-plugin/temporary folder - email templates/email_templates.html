@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Templates</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+
+<!-- ============================================ -->
+<!-- TEMPLATE 1: PASSWORD RESET -->
+<!-- ============================================ -->
+<table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4;" id="template-password-reset">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <!-- Header with Logo -->
+                <tr>
+                    <td align="center" style="padding: 30px; background-color: #1a1d3d;">
+                        <img src="{{LOGO_URL}}" alt="Company Logo" style="max-width: 200px; height: auto;">
+                    </td>
+                </tr>
+                
+                <!-- Icon and Title -->
+                <tr>
+                    <td align="center" style="padding: 40px 30px 20px; background-color: #1a1d3d;">
+                        <div style="width: 60px; height: 60px; border: 3px solid #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                            <span style="color: #ffffff; font-size: 30px;">🔓</span>
+                        </div>
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Please reset your password</h1>
+                    </td>
+                </tr>
+                
+                <!-- Body Content -->
+                <tr>
+                    <td style="padding: 40px 40px 30px;">
+                        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">Hello {{USER_NAME}},</p>
+                        
+                        <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 25px;">
+                            We have sent you this email in response to your request to reset your password on {{WEBSITE_NAME}}.
+                        </p>
+                        
+                        <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                            To reset your password, please follow the link below:
+                        </p>
+                        
+                        <!-- Reset Button -->
+                        <div style="text-align: center; margin: 35px 0;">
+                            <a href="{{RESET_LINK}}" style="display: inline-block; padding: 16px 40px; background-color: #1a1d3d; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 4px;">Reset Password</a>
+                        </div>
+                        
+                        <p style="color: #999999; font-size: 13px; line-height: 1.6; margin: 30px 0 0; font-style: italic;">
+                            Please ignore this email if you did not request a password change.
+                        </p>
+                    </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                    <td style="padding: 30px 40px; background-color: #1a1d3d; color: #ffffff;">
+                        <table role="presentation" style="width: 100%;">
+                            <tr>
+                                <td style="padding-bottom: 15px;">
+                                    <p style="margin: 0; font-size: 14px; color: #ffffff;"><strong>Contact</strong></p>
+                                    <p style="margin: 5px 0; font-size: 13px; color: #cccccc;">{{COMPANY_EMAIL}}</p>
+                                    <p style="margin: 5px 0; font-size: 13px; color: #cccccc;">{{COMPANY_PHONE}}</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                                    <!-- Social Icons -->
+                                    <a href="{{FACEBOOK_URL}}" style="display: inline-block; margin: 0 8px;">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" style="width: 28px; height: 28px;">
+                                    </a>
+                                    <a href="{{TWITTER_URL}}" style="display: inline-block; margin: 0 8px;">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" style="width: 28px; height: 28px;">
+                                    </a>
+                                    <a href="{{INSTAGRAM_URL}}" style="display: inline-block; margin: 0 8px;">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/733/733558.png" alt="Instagram" style="width: 28px; height: 28px;">
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding-top: 15px;">
+                                    <p style="margin: 0; font-size: 12px; color: #cccccc;">{{WEBSITE_NAME}} © All Rights Reserved</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+<!-- ============================================ -->
+<!-- TEMPLATE 2: TWO-FACTOR AUTHENTICATION (OTP) -->
+<!-- ============================================ -->
+<table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4; margin-top: 40px;" id="template-otp">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <!-- Header with Logo -->
+                <tr>
+                    <td align="center" style="padding: 30px; background-color: #1a1d3d;">
+                        <img src="{{LOGO_URL}}" alt="Company Logo" style="max-width: 200px; height: auto;">
+                    </td>
+                </tr>
+                
+                <!-- Icon and Title -->
+                <tr>
+                    <td align="center" style="padding: 40px 30px 20px; background-color: #1a1d3d;">
+                        <div style="width: 60px; height: 60px; border: 3px solid #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                            <span style="color: #ffffff; font-size: 30px;">🔐</span>
+                        </div>
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Verification Code</h1>
+                    </td>
+                </tr>
+                
+                <!-- Body Content -->
+                <tr>
+                    <td style="padding: 40px 40px 30px;">
+                        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">Hello {{USER_NAME}},</p>
+                        
+                        <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 25px;">
+                            You are receiving this email because a login attempt was made to your {{WEBSITE_NAME}} account.
+                        </p>
+                        
+                        <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                            Please use the verification code below to complete your login:
+                        </p>
+                        
+                        <!-- OTP Code Box -->
+                        <div style="text-align: center; margin: 35px 0;">
+                            <div style="display: inline-block; background-color: #f8f9fa; border: 2px dashed #1a1d3d; border-radius: 8px; padding: 25px 45px;">
+                                <p style="margin: 0; font-size: 36px; font-weight: bold; color: #1a1d3d; letter-spacing: 8px; font-family: 'Courier New', monospace;">{{OTP_CODE}}</p>
+                            </div>
+                        </div>
+                        
+                        <p style="color: #e74c3c; font-size: 14px; line-height: 1.6; margin: 25px 0; text-align: center; font-weight: 600;">
+                            This code will expire in {{EXPIRY_TIME}} minutes.
+                        </p>
+                        
+                        <p style="color: #999999; font-size: 13px; line-height: 1.6; margin: 30px 0 0; font-style: italic;">
+                            If you did not attempt to log in, please ignore this email or contact our support team immediately.
+                        </p>
+                    </td>
+                </tr>
+                
+                <!-- Security Notice -->
+                <tr>
+                    <td style="padding: 25px 40px; background-color: #fff3cd; border-top: 1px solid #ffc107; border-bottom: 1px solid #ffc107;">
+                        <p style="margin: 0; font-size: 13px; color: #856404; line-height: 1.6;">
+                            <strong>⚠️ Security Notice:</strong> Never share this code with anyone. {{WEBSITE_NAME}} will never ask you for your verification code.
+                        </p>
+                    </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                    <td style="padding: 30px 40px; background-color: #1a1d3d; color: #ffffff;">
+                        <table role="presentation" style="width: 100%;">
+                            <tr>
+                                <td style="padding-bottom: 15px;">
+                                    <p style="margin: 0; font-size: 14px; color: #ffffff;"><strong>Contact</strong></p>
+                                    <p style="margin: 5px 0; font-size: 13px; color: #cccccc;">{{COMPANY_EMAIL}}</p>
+                                    <p style="margin: 5px 0; font-size: 13px; color: #cccccc;">{{COMPANY_PHONE}}</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                                    <p style="margin: 0; font-size: 12px; color: #cccccc;">{{WEBSITE_NAME}} © All Rights Reserved</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+<!-- ============================================ -->
+<!-- TEMPLATE 3: PASSWORD CHANGED SUCCESSFULLY -->
+<!-- ============================================ -->
+<table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4; margin-top: 40px;" id="template-password-changed">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <!-- Header with Logo -->
+                <tr>
+                    <td align="center" style="padding: 30px; background-color: #1a1d3d;">
+                        <img src="{{LOGO_URL}}" alt="Company Logo" style="max-width: 200px; height: auto;">
+                    </td>
+                </tr>
+                
+                <!-- Icon and Title -->
+                <tr>
+                    <td align="center" style="padding: 40px 30px 20px; background-color: #1a1d3d;">
+                        <div style="width: 60px; height: 60px; border: 3px solid #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; background-color: #27ae60;">
+                            <span style="color: #ffffff; font-size: 30px;">✓</span>
+                        </div>
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Password Changed Successfully</h1>
+                    </td>
+                </tr>
+                
+                <!-- Body Content -->
+                <tr>
+                    <td style="padding: 40px 40px 30px;">
+                        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">Hello {{USER_NAME}},</p>
+                        
+                        <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 25px;">
+                            This email confirms that your password for {{WEBSITE_NAME}} has been changed successfully.
+                        </p>
+                        
+                        <!-- Info Box -->
+                        <div style="background-color: #f8f9fa; border-left: 4px solid #27ae60; padding: 20px; margin: 25px 0;">
+                            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 5px 0; font-size: 14px; color: #666666;">
+                                        <strong style="color: #333333;">Date & Time:</strong> {{CHANGE_DATETIME}}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 25px 0;">
+                            If you made this change, no further action is required.
+                        </p>
+                    </td>
+                </tr>
+                
+                <!-- Warning Section -->
+                <tr>
+                    <td style="padding: 25px 40px; background-color: #fee; border-top: 1px solid #fcc; border-bottom: 1px solid #fcc;">
+                        <p style="margin: 0 0 15px; font-size: 14px; color: #c0392b; font-weight: 600;">
+                            ⚠️ Didn't make this change?
+                        </p>
+                        <p style="margin: 0 0 20px; font-size: 13px; color: #666666; line-height: 1.6;">
+                            If you did not change your password, your account may be compromised. Please contact our support team immediately.
+                        </p>
+                        <div style="text-align: center;">
+                            <a href="{{SUPPORT_LINK}}" style="display: inline-block; padding: 12px 30px; background-color: #c0392b; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 4px;">Contact Support</a>
+                        </div>
+                    </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                    <td style="padding: 30px 40px; background-color: #1a1d3d; color: #ffffff;">
+                        <table role="presentation" style="width: 100%;">
+                            <tr>
+                                <td style="padding-bottom: 15px;">
+                                    <p style="margin: 0; font-size: 14px; color: #ffffff;"><strong>Contact</strong></p>
+                                    <p style="margin: 5px 0; font-size: 13px; color: #cccccc;">{{COMPANY_EMAIL}}</p>
+                                    <p style="margin: 5px 0; font-size: 13px; color: #cccccc;">{{COMPANY_PHONE}}</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                                    <p style="margin: 0; font-size: 12px; color: #cccccc;">{{WEBSITE_NAME}} © All Rights Reserved</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

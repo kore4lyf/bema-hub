@@ -115,6 +115,11 @@ class Bema_Hub {
 		require_once $plugin_dir . '../admin/class-bema-hub-admin.php';
 
 		/**
+		 * The class responsible for defining email template settings.
+		 */
+		require_once $plugin_dir . '../admin/class-bema-hub-email-template-settings.php';
+
+		/**
 		 * The class responsible for defining all actions that occur in the public-facing
 		 * side of the site.
 		 */
@@ -176,7 +181,12 @@ class Bema_Hub {
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_menu_page' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_email_settings' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_otp_settings' );
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_general_settings' );
 		$this->loader->add_action( 'phpmailer_init', $plugin_admin, 'load_smtp_settings' );
+		
+		// Initialize email template settings
+		$email_template_settings = new \Bema_Hub\Admin\Bema_Hub_Email_Template_Settings( $this->get_plugin_name(), $this->get_version() );
+		$this->loader->add_action( 'admin_menu', $email_template_settings, 'add_submenu_page' );
 	}
 
 	/**

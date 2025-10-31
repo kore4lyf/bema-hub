@@ -215,6 +215,13 @@ class Bema_Hub_REST_API {
             'permission_callback' => '__return_true',
         ));
 
+        // Register password reset OTP verification route
+        \register_rest_route('bema-hub/v1', '/auth/verify-password-reset-otp', array(
+            'methods' => 'POST',
+            'callback' => array($this->otp_controller, 'verify_password_reset_otp'),
+            'permission_callback' => '__return_true',
+        ));
+
         // Register protected routes example
         \register_rest_route('bema-hub/v1', '/profile', array(
             'methods' => 'GET',

@@ -7,10 +7,12 @@ This documentation provides detailed information about the REST API endpoints av
 1. [Authentication Endpoints](#authentication-endpoints)
 2. [Protected Endpoints](#protected-endpoints)
 3. [Authentication Flow](#authentication-flow)
-4. [Error Handling](#error-handling)
-5. [Security Considerations](#security-considerations)
-6. [Frontend Integration](#frontend-integration)
-7. [Implementation Documentation](#implementation-documentation)
+4. [Password Reset Flow](#password-reset-flow)
+5. [Next.js Frontend Integration](#nextjs-frontend-integration)
+6. [Error Handling](#error-handling)
+7. [Security Considerations](#security-considerations)
+8. [Frontend Integration](#frontend-integration)
+9. [Implementation Documentation](#implementation-documentation)
 
 ## Authentication Endpoints
 
@@ -57,6 +59,12 @@ These endpoints handle user authentication and token management.
 - **Method**: `POST`
 - **Description**: Request a password reset OTP code
 - **Details**: [endpoint-auth-reset-password-request.md](endpoint-auth-reset-password-request.md)
+
+### 8. Verify Password Reset OTP
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/verify-password-reset-otp`
+- **Method**: `POST`
+- **Description**: Verify password reset OTP code before allowing new password input
+- **Details**: [password-reset-otp-verification.md](password-reset-otp-verification.md)
 
 ## Protected Endpoints
 
@@ -172,9 +180,11 @@ localStorage.removeItem('authToken');
 ## Password Reset Flow
 
 1. **Request Reset**: User requests password reset with email
-2. **Verify OTP**: User verifies OTP code sent to email
-3. **Set New Password**: User sets new password (no reset token needed)
-4. **Login**: User logs in with new password
+2. **Receive Email**: User receives email with path-based reset link
+3. **Click Link**: User clicks link which opens Next.js frontend with OTP in URL path
+4. **Verify OTP**: Frontend verifies OTP with new endpoint
+5. **Set New Password**: User sets new password
+6. **Login**: User logs in with new password
 
 ### Example Password Reset Flow
 ```javascript
@@ -185,30 +195,111 @@ const resetRequestResponse = await fetch('/wp-json/bema-hub/v1/auth/reset-passwo
   body: JSON.stringify({ email: 'user@example.com' })
 });
 
-// 2. Verify reset OTP
-const verifyResetResponse = await fetch('/wp-json/bema-hub/v1/auth/reset-password-verify', {
+// 2. User receives email with link like: http://localhost:3000/reset-password/123456
+// 3. User clicks link which opens Next.js frontend
+// 4. Frontend extracts OTP from URL path and verifies it
+const verifyResetResponse = await fetch('/wp-json/bema-hub/v1/auth/verify-password-reset-otp', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ 
     email: 'user@example.com', 
-    otp_code: '123456' 
+    otp_code: '123456' // From URL path
   })
 });
 
-// 3. Set new password
+// 5. If verification successful, show password reset form
+// 6. Set new password
 const resetPasswordResponse = await fetch('/wp-json/bema-hub/v1/auth/reset-password', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ 
     email: 'user@example.com',
-    otp_code: '123456',
+    otp_code: '123456', // From URL path
     new_password: 'newSecurePassword123'
   })
 });
 
-// 4. Redirect to login
+// 7. Redirect to login
 window.location.href = '/login';
 ```
+
+## Next.js Frontend Integration
+
+The Bema Hub plugin now supports path-based routing for Next.js frontend integration. This allows for cleaner URLs and better user experience.
+
+### Path-Based Routing
+
+Password reset URLs now use path-based routing instead of query parameters:
+- **Old Format**: `https://yourfrontend.com/reset-password?token=TOKEN&user_id=USER_ID`
+- **New Format**: `https://yourfrontend.com/reset-password/123456`
+
+### Implementation Steps
+
+1. **Configure Admin Settings**
+   - Go to **Bema Hub → General Settings**
+     - Set **Frontend Base URL** (e.g., `http://localhost:3000`)
+   - Go to **Bema Hub → Email Templates**
+     - Set **Password Reset Page URL** (e.g., `reset-password`)
+
+2. **Extract OTP from URL Path (Next.js)**
+```javascript
+// For URL: http://localhost:3000/reset-password/123456
+// In Next.js page component (e.g., pages/reset-password/[otp].js)
+import { useRouter } from 'next/router';
+
+function ResetPasswordPage() {
+  const router = useRouter();
+  const { otp } = router.query; // Extracts '123456' from the URL
+  
+  // Verify OTP before showing password form
+  useEffect(() => {
+    if (otp) {
+      verifyOtp(otp);
+    }
+  }, [otp]);
+  
+  // ... rest of component
+}
+```
+
+3. **Verify OTP with Backend**
+```javascript
+async function verifyOtp(otpCode) {
+  try {
+    const response = await fetch('/wp-json/bema-hub/v1/auth/verify-password-reset-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: 'user@example.com', // User's email (you need to get this from context or local storage)
+        otp_code: otpCode // From URL path
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // OTP is valid - show password reset form
+      setShowPasswordForm(true);
+    } else {
+      // Show error and redirect
+      showError(data.message || 'Invalid or expired OTP');
+      // Redirect to request new reset link
+    }
+  } catch (error) {
+    showError('Network error. Please try again.');
+  }
+}
+```
+
+### Admin Configuration
+
+#### OTP Settings
+- **Password Reset Daily Limit**: Maximum password reset requests per user per day (1-50 requests)
+  - Default: 5 requests per day
+- **Email OTP Daily Limit**: Maximum email OTP requests per user per day (1-50 requests)
+  - Default: 10 requests per day
 
 ## Error Handling
 

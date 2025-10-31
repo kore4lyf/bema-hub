@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "ask": [
+      "Read(!C:\\Users\\akfal\\Documents\\bema-hub\\wp-backend\\bema-hub-plugin/**)",
+      "Edit(!C:\\Users\\akfal\\Documents\\bema-hub\\wp-backend\\bema-hub-plugin/**)"
+    ],
+    "allow": [
+      "Read(C:\\Users\\akfal\\Documents\\bema-hub\\wp-backend\\bema-hub-plugin/**)",
+      "Edit(C:\\Users\\akfal\\Documents\\bema-hub\\wp-backend\\bema-hub-plugin/**)"
+    ]
+  },
+  "memoryImport": {},
+  "monitoring": {}
+}

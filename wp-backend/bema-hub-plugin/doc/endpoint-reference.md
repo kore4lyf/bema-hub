@@ -1,475 +1,359 @@
-# Bema Hub API Endpoint Reference
+# Endpoint Reference
 
-This document provides a comprehensive reference for all Bema Hub API endpoints, including sample request bodies and expected responses.
-
-## Table of Contents
-- [Bema Hub API Endpoint Reference](#bema-hub-api-endpoint-reference)
-  - [Table of Contents](#table-of-contents)
-  - [Authentication Endpoints](#authentication-endpoints)
-    - [Signup](#signup)
-    - [Verify OTP](#verify-otp)
-    - [Login](#login)
-    - [Social Login](#social-login)
-    - [Signout](#signout)
-    - [Validate Token](#validate-token)
-    - [Reset Password Request](#reset-password-request)
-    - [Resend OTP](#resend-otp)
-    - [Reset Password Verify](#reset-password-verify)
-    - [Reset Password](#reset-password)
-  - [Protected Endpoints](#protected-endpoints)
-    - [Get User Profile](#get-user-profile)
-    - [Update User Profile](#update-user-profile)
+This document provides a quick reference for all available endpoints in the Bema Hub plugin API.
 
 ## Authentication Endpoints
 
-### Signup
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/wp-json/bema-hub/v1/auth/signin` | POST | Authenticate user and generate JWT token | No |
+| `/wp-json/bema-hub/v1/auth/validate` | POST | Validate existing JWT token | Yes |
+| `/wp-json/bema-hub/v1/auth/signup` | POST | Register new user account | No |
+| `/wp-json/bema-hub/v1/auth/verify-otp` | POST | Verify OTP code for email verification or password reset | No |
+| `/wp-json/bema-hub/v1/auth/social-login` | POST | Authenticate with Google, Facebook, or Twitter | No |
+| `/wp-json/bema-hub/v1/auth/signout` | POST | Sign out currently authenticated user | Yes |
+| `/wp-json/bema-hub/v1/auth/reset-password-request` | POST | Request password reset OTP code | No |
+| `/wp-json/bema-hub/v1/auth/resend-otp` | POST | Resend OTP code for email verification or password reset | No |
+| `/wp-json/bema-hub/v1/auth/verify-password-reset-otp` | POST | Verify password reset OTP code before allowing new password input | No |
+| `/wp-json/bema-hub/v1/auth/reset-password` | POST | Reset user password with OTP code | No |
 
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/signup`
+## Protected Endpoints
 
-**Description**: Register a new user account with email verification. This endpoint creates a new user in the WordPress system and sends an OTP code for email verification.
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/wp-json/bema-hub/v1/profile` | GET | Retrieve authenticated user's profile information | Yes |
+| `/wp-json/bema-hub/v1/profile` | PUT | Update authenticated user's profile information | Yes |
 
-**Request Body**:
+## Detailed Endpoint Information
+
+### 1. Login
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/signin`
+- **Method**: `POST`
+- **Description**: Authenticate a user and generate a JWT token
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "username": "user@example.com",
+    "password": "securepassword"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user_id": 123,
+    "user_login": "johndoe",
+    "user_email": "user@example.com",
+    "user_display_name": "John Doe"
+  }
+  ```
+
+### 2. Token Validation
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/validate`
+- **Method**: `POST`
+- **Description**: Validate an existing JWT token
+- **Auth Required**: Yes
+- **Request Body**:
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Token is valid",
+    "user_id": 123,
+    "user_login": "johndoe",
+    "user_email": "user@example.com",
+    "user_display_name": "John Doe"
+  }
+  ```
+
+### 3. Signup
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/signup`
+- **Method**: `POST`
+- **Description**: Register a new user account
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "securepassword",
+    "first_name": "John",
+    "last_name": "Doe",
+    "country": "United States",
+    "state": "New York"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Signup successful. Please check your email for verification code.",
+    "user_id": 123
+  }
+  ```
+
+### 4. OTP Verification
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/verify-otp`
+- **Method**: `POST`
+- **Description**: Verify OTP code for email verification or password reset
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "email": "user@example.com",
+    "otp_code": "123456"
+  }
+  ```
+- **Success Response** (Email Verification):
+  ```json
+  {
+    "success": true,
+    "message": "Email verified successfully",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user_id": 123,
+    "user_login": "johndoe",
+    "user_email": "user@example.com",
+    "user_display_name": "John Doe"
+  }
+  ```
+- **Success Response** (Password Reset):
+  ```json
+  {
+    "success": true,
+    "message": "Password reset code verified successfully",
+    "reset_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+
+### 5. Social Login
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/social-login`
+- **Method**: `POST`
+- **Description**: Authenticate with Google, Facebook, or Twitter
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "provider": "google",
+    "access_token": "ya29.a0AfH6SMC...",
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "user@example.com",
+    "country": "United States",
+    "state": "New York"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user_id": 123,
+    "user_login": "johndoe",
+    "user_email": "user@example.com",
+    "user_display_name": "John Doe",
+    "is_new_user": true
+  }
+  ```
+
+### 6. Signout
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/signout`
+- **Method**: `POST`
+- **Description**: Sign out the currently authenticated user
+- **Auth Required**: Yes
+- **Request Body**: None
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Successfully signed out"
+  }
+  ```
+
+### 7. Password Reset Request
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/reset-password-request`
+- **Method**: `POST`
+- **Description**: Request a password reset OTP code
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "email": "user@example.com"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "If an account exists with this email, a password reset code has been sent."
+  }
+  ```
+
+### 8. Resend OTP
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/resend-otp`
+- **Method**: `POST`
+- **Description**: Resend OTP code for email verification or password reset
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "email": "user@example.com"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "A new password reset code has been sent to your email."
+  }
+  ```
+
+### 9. Verify Password Reset OTP
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/verify-password-reset-otp`
+- **Method**: `POST`
+- **Description**: Verify password reset OTP code before allowing new password input
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "email": "user@example.com",
+    "otp_code": "123456"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "OTP verified successfully. You can now enter your new password.",
+    "user_id": 123
+  }
+  ```
+
+### 10. Reset Password
+- **Endpoint**: `/wp-json/bema-hub/v1/auth/reset-password`
+- **Method**: `POST`
+- **Description**: Reset user password with OTP code
+- **Auth Required**: No
+- **Request Body**:
+  ```json
+  {
+    "email": "user@example.com",
+    "otp_code": "123456",
+    "new_password": "newSecurePassword123"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Password reset successfully. You can now sign in with your new password."
+  }
+  ```
+
+### 11. Get User Profile
+- **Endpoint**: `/wp-json/bema-hub/v1/profile`
+- **Method**: `GET`
+- **Description**: Retrieve the authenticated user's profile information
+- **Auth Required**: Yes
+- **Request Body**: None
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "user_id": 123,
+    "user_login": "johndoe",
+    "user_email": "user@example.com",
+    "user_display_name": "John Doe",
+    "first_name": "John",
+    "last_name": "Doe",
+    "country": "United States",
+    "state": "New York",
+    "avatar_url": "https://secure.gravatar.com/avatar/..."
+  }
+  ```
+
+### 12. Update User Profile
+- **Endpoint**: `/wp-json/bema-hub/v1/profile`
+- **Method**: `PUT`
+- **Description**: Update the authenticated user's profile information
+- **Auth Required**: Yes
+- **Request Body**:
+  ```json
+  {
+    "first_name": "John",
+    "last_name": "Smith",
+    "country": "United States",
+    "state": "California"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Profile updated successfully",
+    "user_data": {
+      "user_id": 123,
+      "user_login": "johndoe",
+      "user_email": "user@example.com",
+      "user_display_name": "John Smith",
+      "first_name": "John",
+      "last_name": "Smith",
+      "country": "United States",
+      "state": "California",
+      "avatar_url": "https://secure.gravatar.com/avatar/..."
+    }
+  }
+  ```
+
+## Common Error Responses
+
+All endpoints may return the following error responses:
+
+### Bad Request (400)
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword123",
-  "first_name": "John",
-  "last_name": "Doe",
-  "phone_number": "+1234567890",
-  "country": "United States",
-  "state": "New York",
-  "referred_by": "R-SOS2026-123"
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "success": true,
-  "message": "Account created successfully. Please check your email for verification code.",
-  "user_email": "user@example.com",
-  "bema_email_verified": false,
-  "bema_referred_by": "R-SOS2026-123",
-  "role": "subscriber"
-}
-```
-
-**Error Responses**:
-- Missing Required Fields (400)
-- Invalid Email Format (400)
-- Email Already Exists (400)
-- User Creation Failed (500)
-
----
-
-### Verify OTP
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/verify-otp`
-
-**Description**: Verify the OTP code sent to a user's email or phone. This endpoint is used for email verification during signup, phone verification, and password reset. No authentication is required as it's used in all scenarios.
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "otp_code": "123456"
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "success": true,
-  "message": "OTP verified successfully"
-}
-```
-
-**Error Responses**:
-- Missing Required Fields (400)
-- Invalid Email Format (400)
-- User Not Found (404)
-- OTP Expired (400)
-- Invalid OTP (400)
-
----
-
-### Login
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/signin`
-
-**Description**: Authenticate users with their username or email address and password, then returns a JWT token for subsequent authorized requests.
-
-**Request Body**:
-```json
-{
-  "username": "admin",
-  "password": "password123"
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTYxNjE2MTYsIm5iZiI6MTYxNjE2MTYxNiwiZXhwIjoxNjE2NzY2NDE2LCJkYXRhIjp7InVzZXJfaWQiOjEsInVzZXJfbG9naW4iOiJhZG1pbiIsInVzZXJfZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSJ9fQ.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  "user_id": 1,
-  "user_login": "admin",
-  "user_email": "admin@example.com",
-  "user_display_name": "Administrator",
-  "first_name": "Admin",
-  "last_name": "User",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
-  "bema_email_verified": true,
-  "bema_referred_by": "R-SOS2026-123",
-  "role": "administrator"
-}
-```
-
-**Error Responses**:
-- Authentication Failed (401)
-- Missing Parameters (400)
-- Invalid Parameter Types (400)
-
----
-
-### Social Login
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/social-login`
-
-**Description**: Authenticate users through social providers (Google, Facebook, Twitter). This endpoint handles both new user registration and existing user login through social authentication.
-
-**Request Body**:
-```json
-{
-  "provider": "google",
-  "provider_id": "1234567890",
-  "email": "user@example.com",
-  "first_name": "John",
-  "last_name": "Doe",
-  "phone_number": "+1234567890",
-  "country": "United States",
-  "state": "New York"
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user_id": 123,
-  "user_login": "user_example_com",
-  "user_email": "user@example.com",
-  "user_display_name": "John Doe",
-  "first_name": "John",
-  "last_name": "Doe",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
-  "bema_email_verified": true,
-  "bema_referred_by": "R-SOS2026-123",
-  "role": "subscriber"
-}
-```
-
-**Error Responses**:
-- Missing Required Fields (400)
-- Invalid Provider (400)
-- User Creation Failed (500)
-
----
-
-### Signout
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/signout`
-
-**Description**: Signs out the currently authenticated user by invalidating their JWT token and logging the signout event.
-
-**Headers**:
-```
-Authorization: Bearer <token>
-```
-
-**Request Body**: None
-
-**Success Response (200)**:
-```json
-{
-  "success": true,
-  "message": "Successfully signed out"
-}
-```
-
-**Error Responses**:
-- Invalid or Missing Token (401)
-- Expired Token (401)
-- User Not Found (404)
-
----
-
-### Validate Token
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/validate`
-
-**Description**: Validates a JWT token to check if it's still valid and hasn't expired.
-
-**Request Body**:
-```json
-{
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "valid": true,
+  "code": "missing_fields",
+  "message": "Required fields are missing",
   "data": {
-    "user_id": 1,
-    "user_login": "admin",
-    "user_email": "admin@example.com",
-    "first_name": "Admin",
-    "last_name": "User",
-    "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
-    "bema_email_verified": true,
-    "bema_referred_by": "R-SOS2026-123",
-    "role": "administrator"
+    "status": 400
   }
 }
 ```
 
-**Error Responses**:
-- Expired Token (401)
-- Invalid Token (401)
-- Missing Token (400)
-
----
-
-### Reset Password Request
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/reset-password-request`
-
-**Description**: Initiates the password reset process by sending an OTP code to the user's email address.
-
-**Request Body**:
+### Unauthorized (401)
 ```json
 {
-  "email": "user@example.com"
+  "code": "invalid_token",
+  "message": "Invalid or expired token",
+  "data": {
+    "status": 401
+  }
 }
 ```
 
-**Success Response (200)**:
+### Not Found (404)
 ```json
 {
-  "success": true,
-  "message": "If an account exists with this email, a password reset code has been sent."
+  "code": "user_not_found",
+  "message": "User not found",
+  "data": {
+    "status": 404
+  }
 }
 ```
 
-**Error Responses**:
-- Missing Email (400)
-- Invalid Email Format (400)
-
----
-
-### Resend OTP
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/resend-otp`
-
-**Description**: Resends a new OTP code to the user's email address when the previous OTP has expired or been lost. This endpoint can be used for both email verification during signup and password reset scenarios. No authentication is required.
-
-**Request Body**:
+### Internal Server Error (500)
 ```json
 {
-  "email": "user@example.com"
+  "code": "internal_error",
+  "message": "An internal error occurred",
+  "data": {
+    "status": 500
+  }
 }
 ```
-
-**Success Response (200)**:
-```json
-{
-  "success": true,
-  "message": "A new verification code has been sent to your email."
-}
-```
-
-**Error Responses**:
-- Missing Email (400)
-- Invalid Email Format (400)
-- User Not Found (404)
-- No Active OTP (400)
-
----
-
-### Reset Password Verify
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/reset-password-verify`
-
-**Description**: Verifies the OTP code sent to the user's email during the password reset process. No authentication is required.
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "otp_code": "123456"
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "success": true,
-  "message": "Password reset code verified successfully"
-}
-```
-
-**Error Responses**:
-- Missing Fields (400)
-- Invalid Email Format (400)
-- User Not Found (404)
-- No OTP Found (400)
-- Expired OTP (400)
-- Invalid OTP (400)
-
----
-
-### Reset Password
-
-**Endpoint**: `POST /wp-json/bema-hub/v1/auth/reset-password`
-
-**Description**: Sets a new password for the user after successful OTP verification. User must then login with the new password.
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "otp_code": "123456",
-  "new_password": "newSecurePassword123"
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "success": true,
-  "message": "Password has been reset successfully. Please login with your new password."
-}
-```
-
-**Error Responses**:
-- Missing Fields (400)
-- Weak Password (400)
-- Invalid OTP (400)
-- User Not Found (404)
-
----
-
-## Protected Endpoints
-
-### Get User Profile
-
-**Endpoint**: `GET /wp-json/bema-hub/v1/profile`
-
-**Description**: Returns the profile information of the authenticated user, including all custom user meta fields and WordPress avatar.
-
-**Headers**:
-```
-Authorization: Bearer <token>
-```
-
-**Request Body**: None
-
-**Success Response (200)**:
-```json
-{
-  "id": 1,
-  "username": "admin",
-  "email": "admin@example.com",
-  "display_name": "Administrator",
-  "first_name": "Admin",
-  "last_name": "User",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
-  "bema_phone_number": "UzJWbWMzQnBjeUF4TURB",
-  "bema_country": "United States",
-  "bema_state": "New York",
-  "bema_referred_by": "R-SOS2026-123",
-  "bema_tier_level": "Opt-In",
-  "bema_account_type": "subscriber",
-  "bema_email_verified": true,
-  "bema_phone_verified": false,
-  "bema_fraud_flag": false,
-  "bema_device_id": "device_5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f",
-  "bema_last_signin": 1609459200,
-  "bema_last_signout": 1609459200,
-  "bema_google_id": "123456789012345678901",
-  "bema_facebook_id": "1234567890123456",
-  "bema_twitter_id": "123456789",
-  "role": "administrator"
-}
-```
-
-**Error Responses**:
-- Missing Authorization Header (401)
-- Invalid Authorization Header Format (401)
-- Invalid Token (401)
-- Expired Token (401)
-- User Not Found (404)
-
----
-
-### Update User Profile
-
-**Endpoint**: `PUT /wp-json/bema-hub/v1/profile`
-
-**Description**: Updates the profile information of the authenticated user. Note that `bema_referred_by` and `role` cannot be updated as they're only set during signup.
-
-**Headers**:
-```
-Authorization: Bearer <token>
-```
-
-**Request Body**:
-```json
-{
-  "first_name": "John",
-  "last_name": "Doe",
-  "display_name": "John Doe",
-  "bema_phone_number": "+1234567890",
-  "bema_country": "United States",
-  "bema_state": "California"
-}
-```
-
-**Success Response (200)**:
-```json
-{
-  "id": 123,
-  "username": "user_example_com",
-  "email": "user@example.com",
-  "display_name": "John Doe",
-  "first_name": "John",
-  "last_name": "Doe",
-  "avatar_url": "https://secure.gravatar.com/avatar/23463b99b62a72f26ed677cc556c44e8?s=96&d=mm&r=g",
-  "bema_phone_number": "UzJWbWMzQnBjeUF4TURB",
-  "bema_country": "United States",
-  "bema_state": "California",
-  "bema_referred_by": "R-SOS2026-123",
-  "bema_tier_level": "Opt-In",
-  "bema_account_type": "subscriber",
-  "bema_email_verified": true,
-  "bema_phone_verified": true,
-  "bema_fraud_flag": false,
-  "bema_device_id": "device_5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f",
-  "bema_last_signin": 1609459200,
-  "bema_last_signout": 1609459200,
-  "bema_google_id": "123456789012345678901",
-  "bema_facebook_id": "1234567890123456",
-  "bema_twitter_id": "123456789",
-  "role": "subscriber"
-}
-```
-
-**Error Responses**:
-- Missing Authorization Header (401)
-- Invalid Authorization Header Format (401)
-- Invalid Token (401)
-- Expired Token (401)
-- User Not Found (404)
-- Update Failed (500)

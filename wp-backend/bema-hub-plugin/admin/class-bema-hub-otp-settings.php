@@ -139,6 +139,8 @@ class Bema_Hub_OTP_Settings {
 		add_settings_field('otp_length', 'OTP Length', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'length']);
 		add_settings_field('otp_max_attempts', 'Max Verification Attempts', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'max_attempts']);
 		add_settings_field('otp_resend_delay', 'Resend Delay (seconds)', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'resend_delay']);
+		add_settings_field('otp_daily_limit', 'Daily OTP Request Limit', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'daily_limit']);
+		add_settings_field('password_reset_daily_limit', 'Daily Password Reset Limit', array($this, 'otp_plugin_field_callback'), 'bema-hub-otp-settings', 'bema-hub-otp-main-section', ['field' => 'password_reset_daily_limit']);
 	}
 
 	/**
@@ -240,6 +242,12 @@ class Bema_Hub_OTP_Settings {
 				case 'resend_delay':
 					$value = '60'; // 60 seconds
 					break;
+				case 'daily_limit':
+					$value = '10'; // 10 requests per day
+					break;
+				case 'password_reset_daily_limit':
+					$value = '5'; // 5 password reset requests per day
+					break;
 			}
 		}
 		
@@ -258,6 +266,12 @@ class Bema_Hub_OTP_Settings {
 				break;
 			case 'resend_delay':
 				echo '<p class="description">Delay in seconds before user can request new OTP (0-300 seconds)</p>';
+				break;
+			case 'daily_limit':
+				echo '<p class="description">Maximum OTP requests allowed per 24 hours (1-100 requests)</p>';
+				break;
+			case 'password_reset_daily_limit':
+				echo '<p class="description">Maximum password reset requests allowed per 24 hours (1-50 requests)</p>';
 				break;
 		}
 	}
