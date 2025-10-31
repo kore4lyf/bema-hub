@@ -61,8 +61,8 @@ export const authApi = createApi({
     resetPasswordRequest: builder.mutation<ResetPasswordRequestResponse, ResetPasswordRequestRequest>({
       query: (data) => ({ url: 'auth/reset-password-request', method: 'POST', body: data }),
     }),
-    resetPasswordVerify: builder.mutation<ResetPasswordVerifyResponse, ResetPasswordVerifyRequest>({
-      query: (data) => ({ url: 'auth/reset-password-verify', method: 'POST', body: data }),
+    verifyPasswordResetOtp: builder.mutation<ResetPasswordVerifyResponse, ResetPasswordVerifyRequest>({
+      query: (data) => ({ url: 'auth/verify-password-reset-otp', method: 'POST', body: data }),
     }),
     resetPassword: builder.mutation<ResetPasswordResponse, ResetPasswordFinalRequest>({
       query: (data) => ({ url: 'auth/reset-password', method: 'POST', body: data }),
@@ -87,7 +87,7 @@ export const {
   useSignoutMutation,
   useValidateMutation,
   useResetPasswordRequestMutation,
-  useResetPasswordVerifyMutation,
+  useVerifyPasswordResetOtpMutation,
   useResetPasswordMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,

@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategorySelector } from "@/components/blog/CategorySelector";
+import { TagSelector } from "@/components/blog/TagSelector";
+import { AdvancedEditor } from "@/components/blog/AdvancedEditor";
 import { WordPressEditor } from "@/components/blog/WordPressEditor";
 import { ArrowLeft, Save, Eye, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGetPostQuery, useUpdatePostMutation } from "@/lib/api/blogApi";
 import { useForm, Controller } from "react-hook-form";
@@ -23,14 +25,33 @@ interface FormData {
   content: string;
   excerpt: string;
   status: 'draft' | 'publish';
-  category: string;
+  category: number | null;
+  tags: number[];
 }
 
-export default function EditBlogPage({ params }: { params: { id: string } }) {
+export default function EditBlogPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const postId = parseInt(params.id);
+  const [postId, setPostId] = useState<number | null>(null);
 
-  const { data: post, isLoading: postLoading, error } = useGetPostQuery(postId);
+  // Resolve params Promise
+  useEffect(() => {
+    params.then((resolvedParams) => {
+      const id = parseInt(resolvedParams.id);
+      if (!isNaN(id) && id > 0) {
+        setPostId(id);
+      } else {
+        toast.error("Invalid post ID");
+        router.push('/blog/manage');
+      }
+    }).catch(() => {
+      toast.error("Failed to load post");
+      router.push('/blog/manage');
+    });
+  }, [params, router]);
+
+  const { data: post, isLoading: postLoading, error } = useGetPostQuery(postId || 0, {
+    skip: !postId
+  });
   const [updatePost, { isLoading: updating }] = useUpdatePostMutation();
 
   const { control, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
@@ -39,7 +60,8 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
       content: "",
       excerpt: "",
       status: 'draft',
-      category: "",
+      category: null,
+      tags: [],
     }
   });
 
@@ -56,19 +78,26 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
         content: post.content.rendered,
         excerpt: stripHtml(post.excerpt.rendered),
         status: post.status as 'draft' | 'publish',
-        category: post.categories && post.categories.length > 0 ? post.categories[0].toString() : "",
+        category: post.categories && post.categories.length > 0 ? post.categories[0] : null,
+        tags: post.tags || [],
       });
     }
   }, [post, reset]);
 
   const onSubmit = async (data: FormData) => {
     try {
+      if (!postId) {
+        toast.error('Post ID is missing');
+        return;
+      }
+
       const postData = {
         title: data.title.trim(),
         content: data.content.trim(),
         excerpt: data.excerpt.trim() || undefined,
         status: data.status,
-        categories: data.category ? [parseInt(data.category)] : undefined,
+        categories: data.category ? [data.category] : undefined,
+        tags: data.tags.length > 0 ? data.tags : undefined,
       };
 
       await updatePost({ id: postId, data: postData }).unwrap();
@@ -102,15 +131,18 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
     }
   };
 
-  if (postLoading) {
+  // Show loading while resolving params or loading post
+  if (!postId || postLoading) {
     return (
       <>
         <Navbar />
         <main className="container max-w-4xl py-12 px-4 sm:px-6 mx-auto">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading post...</p>
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+              <p className="text-muted-foreground">
+                {!postId ? 'Loading post details...' : 'Loading post...'}
+              </p>
             </div>
           </div>
         </main>
@@ -140,21 +172,36 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
   return (
     <>
       <Navbar />
-      <main className="container max-w-4xl py-12 px-4 sm:px-6 mx-auto">
+      <main className="container max-w-6xl py-8 px-4 sm:px-6 mx-auto">
         <div className="mb-8">
-          <Link href="/blog/manage" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6">
+          <Link href="/blog/manage" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4 transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Back to Manage
           </Link>
-          <h1 className="text-3xl font-bold">Edit Post</h1>
-          <p className="text-muted-foreground">Update your blog post</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Edit Post</h1>
+              <p className="text-muted-foreground">Update your blog post</p>
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handlePreview} className="gap-2">
+                <Eye className="h-4 w-4" />
+                Preview
+              </Button>
+              <Link href={`/blog/${post?.slug}`}>
+                <Button type="button" variant="outline" className="gap-2">
+                  View Post
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Card className="p-6">
+          <Card className="p-6 shadow-sm">
             <div className="space-y-6">
               <div>
-                <Label htmlFor="title">Title *</Label>
+                <Label htmlFor="title" className="text-base font-medium">Title *</Label>
                 <Controller
                   name="title"
                   control={control}
@@ -163,7 +210,7 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
                     <Input
                       {...field}
                       placeholder="Enter post title..."
-                      className="mt-2"
+                      className="mt-2 text-lg p-6"
                     />
                   )}
                 />
@@ -173,7 +220,7 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
               </div>
 
               <div>
-                <Label htmlFor="excerpt">Excerpt</Label>
+                <Label htmlFor="excerpt" className="text-base font-medium">Excerpt</Label>
                 <Controller
                   name="excerpt"
                   control={control}
@@ -181,25 +228,24 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
                     <Textarea
                       {...field}
                       placeholder="Brief description of your post..."
-                      className="mt-2"
+                      className="mt-2 p-4"
                       rows={3}
                     />
                   )}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label>Category</Label>
+                  <Label className="text-base font-medium">Category</Label>
                   <div className="mt-2">
                     <Controller
                       name="category"
                       control={control}
                       render={({ field }) => (
                         <CategorySelector
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          placeholder="Select or create category"
+                          selectedCategory={field.value}
+                          onCategoryChange={field.onChange}
                         />
                       )}
                     />
@@ -207,13 +253,29 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
                 </div>
 
                 <div>
-                  <Label htmlFor="status">Status</Label>
+                  <Label className="text-base font-medium">Tags</Label>
+                  <div className="mt-2">
+                    <Controller
+                      name="tags"
+                      control={control}
+                      render={({ field }) => (
+                        <TagSelector
+                          selectedTags={field.value}
+                          onTagsChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="status" className="text-base font-medium">Status</Label>
                   <Controller
                     name="status"
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="mt-2">
+                        <SelectTrigger className="mt-2 w-full md:w-1/3">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -228,10 +290,15 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-6 shadow-sm">
             <div>
-              <Label>Content *</Label>
-              <div className="mt-2">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-base font-medium">Content *</Label>
+                <span className="text-sm text-muted-foreground">
+                  {watchedData.content ? `${Math.ceil(stripHtml(watchedData.content).split(' ').length / 200)} min read` : '0 min read'}
+                </span>
+              </div>
+              <div className="mt-2 border rounded-lg overflow-hidden">
                 <Controller
                   name="content"
                   control={control}
@@ -251,17 +318,17 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
             </div>
           </Card>
 
-          <div className="flex gap-4">
-            <Button type="submit" disabled={updating}>
-              <Save className="h-4 w-4 mr-2" />
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <Button type="submit" disabled={updating} className="gap-2 px-6 py-3 text-base">
+              <Save className="h-5 w-5" />
               {updating ? 'Updating...' : 'Update Post'}
             </Button>
-            <Button type="button" variant="outline" onClick={handlePreview}>
-              <Eye className="h-4 w-4 mr-2" />
+            <Button type="button" variant="outline" onClick={handlePreview} className="gap-2 px-6 py-3 text-base">
+              <Eye className="h-5 w-5" />
               Preview
             </Button>
-            <Link href={`/blog/${post?.slug}`}>
-              <Button type="button" variant="outline">
+            <Link href={`/blog/${post?.slug}`} className="flex-1">
+              <Button type="button" variant="outline" className="w-full gap-2 px-6 py-3 text-base">
                 View Post
               </Button>
             </Link>

@@ -318,7 +318,7 @@ export default function BlogPage() {
             <div className="space-y-6">
               <Card className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 border-purple-200 dark:border-purple-800">
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"> 
                     Categories
                   </h3>
                   <div className="space-y-3">
@@ -365,15 +365,27 @@ export default function BlogPage() {
 
               <Card className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Join the Echo Loop</h3>
+                  <h3 className="text-lg font-semibold mb-2">Stay in the Loop</h3>
                   <p className="text-white/90 mb-4 text-sm">
-                    Get exclusive access to Bema Music content, early releases, and community perks.
+                    Get exclusive updates, early access to campaigns, and behind-the-scenes content delivered straight to your inbox.
                   </p>
-                  <Link href="/signup">
-                    <Button className="w-full bg-white text-purple-600 hover:bg-white/90">
-                      Join Now
+                  <form className="space-y-3">
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      className="bg-white/10 border-white/30 text-white placeholder:text-white/60 focus:border-white/50 text-sm"
+                      required
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-white text-purple-600 hover:bg-white/90 text-sm"
+                    >
+                      Subscribe
                     </Button>
-                  </Link>
+                  </form>
+                  <p className="text-xs text-white/70 mt-3 text-center">
+                    No spam, unsubscribe at any time.
+                  </p>
                 </div>
               </Card>
             </div>

@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategorySelector } from "@/components/blog/CategorySelector";
-import { WordPressEditor } from "@/components/blog/WordPressEditor";
+import { TagSelector } from "@/components/blog/TagSelector";
+import { AdvancedEditor } from "@/components/blog/AdvancedEditor";
 import { ArrowLeft, Save, Eye, Settings, Loader2, CheckCircle, AlertCircle, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,6 +29,7 @@ interface FormData {
   excerpt: string;
   status: 'draft' | 'publish';
   category: string;
+  tags: number[];
 }
 
 export default function CreateBlogPage() {
@@ -68,13 +70,14 @@ export default function CreateBlogPage() {
     );
   }
 
-  const { control, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     defaultValues: {
       title: "",
       content: "",
       excerpt: "",
       status: 'draft',
       category: "",
+      tags: [],
     }
   });
 
@@ -126,6 +129,7 @@ export default function CreateBlogPage() {
         excerpt: data.excerpt?.trim() || undefined,
         status: data.status,
         categories: data.category && data.category !== 'none' ? [parseInt(data.category)] : undefined,
+        tags: data.tags && data.tags.length > 0 ? data.tags : undefined,
       };
 
       const result = await createPost(postData).unwrap();
@@ -257,7 +261,7 @@ export default function CreateBlogPage() {
                     control={control}
                     rules={{ required: "Content is required" }}
                     render={({ field }) => (
-                      <WordPressEditor
+                      <AdvancedEditor
                         content={field.value}
                         onChange={field.onChange}
                         placeholder="Tell your story..."
@@ -318,6 +322,24 @@ export default function CreateBlogPage() {
                       />
                     )}
                   />
+                </div>
+              </Card>
+
+              {/* Tags */}
+              <Card>
+                <div className="p-6">
+                  <h3 className="font-medium mb-4">Tags</h3>
+                  <Controller
+                    name="tags"
+                    control={control}
+                    render={({ field }) => (
+                      <TagSelector
+                        selectedTags={field.value}
+                        onTagsChange={field.onChange}
+                      />
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">Add relevant tags to help readers find your content</p>
                 </div>
               </Card>
 

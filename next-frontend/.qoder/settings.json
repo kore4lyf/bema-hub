@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "ask": [
+      "Read(!C:\\Users\\akfal\\Documents\\bema-hub\\next-frontend/**)",
+      "Edit(!C:\\Users\\akfal\\Documents\\bema-hub\\next-frontend/**)"
+    ],
+    "allow": [
+      "Read(C:\\Users\\akfal\\Documents\\bema-hub\\next-frontend/**)",
+      "Edit(C:\\Users\\akfal\\Documents\\bema-hub\\next-frontend/**)"
+    ]
+  },
+  "memoryImport": {},
+  "monitoring": {}
+}

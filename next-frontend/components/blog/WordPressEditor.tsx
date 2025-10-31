@@ -14,6 +14,8 @@ import {
   Upload, Loader2
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 
@@ -25,6 +27,7 @@ interface WordPressEditorProps {
 
 export function WordPressEditor({ content, onChange, placeholder = "Start writing..." }: WordPressEditorProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const token = useSelector((state: RootState) => state.auth.token);
 
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
@@ -33,6 +36,7 @@ export function WordPressEditor({ content, onChange, placeholder = "Start writin
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/wp-json/wp/v2/media`, {
         method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
       });
 

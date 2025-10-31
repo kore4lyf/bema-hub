@@ -7,7 +7,7 @@ import {
   useSocialLoginMutation,
   useSignoutMutation,
   useResetPasswordRequestMutation,
-  useResetPasswordVerifyMutation,
+  useVerifyPasswordResetOtpMutation,
   useResetPasswordMutation
 } from '@/lib/api/authApi';
 import { 
@@ -36,7 +36,7 @@ export const useAuth = () => {
   const [socialLoginMutation, socialLoginState] = useSocialLoginMutation();
   const [signoutMutation, signoutState] = useSignoutMutation();
   const [requestResetMutation, requestResetState] = useResetPasswordRequestMutation();
-  const [verifyResetMutation, verifyResetState] = useResetPasswordVerifyMutation();
+  const [verifyResetMutation, verifyResetState] = useVerifyPasswordResetOtpMutation();
   const [setPasswordMutation, setPasswordState] = useResetPasswordMutation();
 
   // Unified auth methods

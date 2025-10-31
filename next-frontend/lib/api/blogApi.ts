@@ -49,6 +49,28 @@ export interface CreatePostData {
   featured_media?: number;
 }
 
+export interface Tag {
+  id: number;
+  count: number;
+  description: string;
+  link: string;
+  name: string;
+  slug: string;
+  taxonomy: string;
+  meta: any[];
+  _links: any;
+}
+
+export interface CreateTagData {
+  name: string;
+  description?: string;
+  slug?: string;
+}
+export interface CreateCategoryData {
+  name: string;
+  description?: string;
+  slug?: string;
+}
 export interface Comment {
   id: number;
   post?: number;
@@ -92,7 +114,7 @@ export const blogApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['BlogPost', 'BlogCategory', 'Comment'],
+  tagTypes: ['BlogPost', 'BlogCategory', 'Comment', 'Tag', 'Media'],
   endpoints: (builder) => ({
     // Get all posts with filters
     getPosts: builder.query<BlogPost[], {
@@ -149,7 +171,15 @@ export const blogApi = createApi({
       query: () => '/categories?per_page=100',
       providesTags: ['BlogCategory'],
     }),
-
+    // Create category
+    createCategory: builder.mutation<BlogCategory, CreateCategoryData>({
+      query: (data) => ({
+        url: '/categories',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['BlogCategory'],
+    }),
     // Create new post
     createPost: builder.mutation<BlogPost, CreatePostData>({
       query: (data) => ({
@@ -234,6 +264,60 @@ export const blogApi = createApi({
       invalidatesTags: (result) => 
         result ? [{ type: 'Comment' as const, id: result.post }] : [],
     }),
+
+    // Get tags
+    getTags: builder.query<Tag[], { search?: string; per_page?: number }>({
+      query: ({ search, per_page = 50 } = {}) => {
+        const params = new URLSearchParams({
+          per_page: per_page.toString(),
+          orderby: 'count',
+          order: 'desc',
+        });
+        if (search) {
+          params.append('search', search);
+        }
+        return `/tags?${params.toString()}`;
+      },
+      providesTags: ['Tag'],
+    }),
+
+    // Create tag
+    createTag: builder.mutation<Tag, CreateTagData>({
+      query: (data) => ({
+        url: '/tags',
+        method: 'POST',
+        body: data,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      invalidatesTags: ['Tag'],
+    }),
+
+    // Upload media
+    uploadMedia: builder.mutation<any, FormData>({
+      query: (formData) => ({
+        url: '/media',
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header, let browser set it with boundary for FormData
+      }),
+      invalidatesTags: ['Media'],
+    }),
+
+    // Get media
+    getMedia: builder.query<any[], { per_page?: number; media_type?: string }>({
+      query: ({ per_page = 20, media_type } = {}) => {
+        const params = new URLSearchParams({
+          per_page: per_page.toString(),
+        });
+        if (media_type) {
+          params.append('media_type', media_type);
+        }
+        return `/media?${params.toString()}`;
+      },
+      providesTags: ['Media'],
+    }),
   }),
 });
 
@@ -242,6 +326,7 @@ export const {
   useGetPostBySlugQuery,
   useGetPostQuery,
   useGetCategoriesQuery,
+  useCreateCategoryMutation,
   useCreatePostMutation,
   useUpdatePostMutation,
   useDeletePostMutation,
@@ -250,4 +335,8 @@ export const {
   useGetCommentsQuery,
   useCreateCommentMutation,
   useReplyToCommentMutation,
+  useGetTagsQuery,
+  useCreateTagMutation,
+  useUploadMediaMutation,
+  useGetMediaQuery,
 } = blogApi;

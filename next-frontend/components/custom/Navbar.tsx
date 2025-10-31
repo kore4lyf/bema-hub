@@ -24,7 +24,7 @@ export function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [indicatorStyle, setIndicatorStyle] = useState<{left: number, width: number} | null>(null);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const navContainerRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +45,10 @@ export function Navbar() {
         (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) || isAuthenticated
       );
       
-      const activeItemIndex = filteredItems.findIndex(item => pathname === item.href);
+      // Find the active item (exact match or subroute)
+      const activeItemIndex = filteredItems.findIndex(item => 
+        pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/')) || pathname.startsWith(item.href + '?')
+      );
       
       if (activeItemIndex !== -1 && navRefs.current[activeItemIndex] && navContainerRef.current) {
         const activeLink = navRefs.current[activeItemIndex];
@@ -62,6 +65,12 @@ export function Navbar() {
             width: indicatorWidth,
           });
         }
+      } else {
+        // Hide indicator if no active item found by setting width to 0
+        setIndicatorStyle({
+          left: 0,
+          width: 0,
+        });
       }
     };
 
@@ -82,7 +91,10 @@ export function Navbar() {
         (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) || isAuthenticated
       );
       
-      const activeItemIndex = filteredItems.findIndex(item => pathname === item.href);
+      // Find the active item (exact match or subroute)
+      const activeItemIndex = filteredItems.findIndex(item => 
+        pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/')) || pathname.startsWith(item.href + '?')
+      );
       
       if (activeItemIndex !== -1 && navRefs.current[activeItemIndex] && navContainerRef.current) {
         const activeLink = navRefs.current[activeItemIndex];
@@ -100,20 +112,11 @@ export function Navbar() {
           });
         }
       } else {
-        // Set initial position to first item if no active item found
-        if (navRefs.current[0] && navContainerRef.current) {
-          const firstLink = navRefs.current[0];
-          const containerRect = navContainerRef.current.getBoundingClientRect();
-          const linkRect = firstLink.getBoundingClientRect();
-          
-          const indicatorWidth = linkRect.width + 4;
-          const indicatorLeft = linkRect.left - containerRect.left - 2;
-          
-          setIndicatorStyle({
-            left: indicatorLeft,
-            width: indicatorWidth,
-          });
-        }
+        // Hide indicator if no active item found by setting width to 0
+        setIndicatorStyle({
+          left: 0,
+          width: 0,
+        });
       }
     }, 50); // Small delay to ensure DOM is ready
     
@@ -133,7 +136,6 @@ export function Navbar() {
   };
 
   const navItems = [
-    { name: "Home", href: "/" },
     { name: "Blog", href: "/blog" },
     { name: "Events", href: "/events" },
     { name: "Campaigns", href: "/campaigns" },
@@ -159,7 +161,8 @@ export function Navbar() {
                 (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) || isAuthenticated
               )
               .map((item, index) => {
-                const isActive = pathname === item.href;
+                // Check for exact match or subroute match
+                const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/')) || pathname.startsWith(item.href + '?');
                 return (
                   <Link
                     key={item.name}
@@ -176,13 +179,16 @@ export function Navbar() {
                 );
               })}
             {/* Sliding background indicator - no animation */}
-            <div 
-              className="absolute bottom-0 h-2 translate-y-[18px] bg-primary transition-all duration-0"
-              style={{
-                left: `${indicatorStyle.left}px`,
-                width: `${indicatorStyle.width}px`,
-              }}
-            />
+            {/* Show indicator even when no nav item is active, but hide when width is 0 */}
+            {indicatorStyle && indicatorStyle.width > 0 && (
+              <div 
+                className="absolute bottom-0 h-0.5 bg-primary transition-all duration-0"
+                style={{
+                  left: `${indicatorStyle.left}px`,
+                  width: `${indicatorStyle.width}px`,
+                }}
+              />
+            )}
           </div>
         </nav>
 
@@ -204,10 +210,18 @@ export function Navbar() {
                 className="rounded-full"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               >
-                <Avatar className="h-8 w-8 bg-primary/10">
-                  <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                    {user.name?.[0] || user.email?.[0] || "U"}
-                  </div>
+                <Avatar className="h-8 w-8">
+                  {user.avatar_url ? (
+                    <img 
+                      src={user.avatar_url} 
+                      alt={user.name || "User avatar"} 
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold bg-primary/10">
+                      {user.name?.[0].toUpperCase() || user.email?.[0].toUpperCase() || "U"}
+                    </div>
+                  )}
                 </Avatar>
               </Button>
 
@@ -262,7 +276,7 @@ export function Navbar() {
         <div className="container max-w-7xl md:hidden px-4 pb-4 mx-auto">
           <div className="flex flex-col gap-2 pt-2">
             {navItems.map((item) => {
-              if (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) {
+              if ((!isAuthenticated && !protectedNavRoutesName.includes(item.name)) || isAuthenticated) {
 
                 return (<Link
                   key={item.name}

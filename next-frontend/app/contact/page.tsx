@@ -143,7 +143,7 @@ function ContactContent() {
                 <div className="flex gap-4">
                   <Button variant="outline" size="icon">
                     <span className="sr-only">Twitter</span>
-                    <Twitter/>
+                    <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
                   </Button>
                   <Button variant="outline" size="icon">
                     <span className="sr-only">Instagram</span>
@@ -164,7 +164,7 @@ function ContactContent() {
                 <h3 className="font-semibold mb-4">Office Location</h3>
                 <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3305.4537534778894!2d-118.24532!3d34.05223!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDAzJzA4LjAiTiAxMTjCsDE0JzQzLjEiVw!5e0!3m2!1sen!2sus!4v1234567890"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.7907439438322!2d-73.987667!3d40.7446298!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a614ccab0b%3A0xf4a42a0b5f7280b0!2s244%205th%20Ave%20%232510%2C%20New%20York%2C%20NY%2010001%2C%20USA!5e0!3m2!1sen!2sng!4v1761876162185!5m2!1sen!2sng"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
