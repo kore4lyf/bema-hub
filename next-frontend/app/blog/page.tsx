@@ -81,7 +81,6 @@ export default function BlogPage() {
   }
 
   if (postsError) {
-    // Show layout with error message instead of breaking the page
     return (
       <>
         <Navbar />
@@ -98,8 +97,33 @@ export default function BlogPage() {
 
             <div className="grid gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">Unable to load posts right now. Please refresh the page.</p>
+                <Card className="p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-700">
+                  <div className="max-w-md mx-auto">
+                    <div className="mb-6">
+                      <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        Unable to Load Posts
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-6">
+                        We're having trouble connecting to our content server. This might be a temporary issue.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <Button 
+                        onClick={() => window.location.reload()} 
+                        className="w-full"
+                      >
+                        Refresh Page
+                      </Button>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        If the problem persists, please check your internet connection or try again later.
+                      </p>
+                    </div>
+                  </div>
                 </Card>
               </div>
               
@@ -114,6 +138,21 @@ export default function BlogPage() {
                       <Button className="w-full bg-white text-purple-600 hover:bg-white/90">
                         Join Now
                       </Button>
+                    </Link>
+                  </div>
+                </Card>
+                
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4">Need Help?</h3>
+                  <div className="space-y-3 text-sm">
+                    <Link href="/contact" className="block text-blue-600 hover:text-blue-800">
+                      → Contact Support
+                    </Link>
+                    <Link href="/help" className="block text-blue-600 hover:text-blue-800">
+                      → Help Center
+                    </Link>
+                    <Link href="/" className="block text-blue-600 hover:text-blue-800">
+                      → Back to Home
                     </Link>
                   </div>
                 </Card>
@@ -280,7 +319,6 @@ export default function BlogPage() {
               <Card className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 border-purple-200 dark:border-purple-800">
                 <div className="p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-purple-600" />
                     Categories
                   </h3>
                   <div className="space-y-3">

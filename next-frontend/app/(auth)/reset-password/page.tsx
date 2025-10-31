@@ -40,7 +40,12 @@ function ResetPasswordContent() {
       toast.success("Reset code sent to your email");
       setStep(2);
     } catch (error: any) {
-      toast.error(error.data?.message || "Failed to send reset code");
+      // Handle rate limiting (HTTP 429) with precise time formatting
+      if (error.status === 429 || error.data?.code === 'password_reset_request_limit_exceeded') {
+        toast.error(error.data?.message || "Too many password reset requests. Please try again later.");
+      } else {
+        toast.error(error.data?.message || "Failed to send reset code");
+      }
     }
   };
 

@@ -35,6 +35,38 @@ export default function CreateBlogPage() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [createPost, { isLoading }] = useCreatePostMutation();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Card className="p-8 max-w-md mx-auto text-center">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H9m3-8V9m0 0V7m0 2H9m3 0h3" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold mb-3">Authentication Required</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              You need to be signed in to create blog posts.
+            </p>
+            <div className="space-y-3">
+              <Link href="/signin">
+                <Button className="w-full">Sign In</Button>
+              </Link>
+              <Link href="/signup">
+                <Button variant="outline" className="w-full">Create Account</Button>
+              </Link>
+            </div>
+          </Card>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   const { control, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     defaultValues: {
@@ -48,10 +80,41 @@ export default function CreateBlogPage() {
 
   const watchedData = watch();
 
+  const validateForm = (data: FormData) => {
+    const errors: string[] = [];
+    
+    if (!data.title?.trim()) {
+      errors.push("Title is required");
+    } else if (data.title.trim().length < 5) {
+      errors.push("Title must be at least 5 characters long");
+    } else if (data.title.trim().length > 100) {
+      errors.push("Title must be less than 100 characters");
+    }
+    
+    if (!data.content?.trim()) {
+      errors.push("Content is required");
+    } else if (data.content.trim().length < 50) {
+      errors.push("Content must be at least 50 characters long");
+    }
+    
+    if (data.excerpt && data.excerpt.trim().length > 200) {
+      errors.push("Excerpt must be less than 200 characters");
+    }
+    
+    return errors;
+  };
+
   const onSubmit = async (data: FormData) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to create posts");
       router.push('/signin');
+      return;
+    }
+
+    // Validate form data
+    const validationErrors = validateForm(data);
+    if (validationErrors.length > 0) {
+      toast.error(`Please fix the following issues:\n• ${validationErrors.join('\n• ')}`);
       return;
     }
 
@@ -60,19 +123,23 @@ export default function CreateBlogPage() {
       const postData = {
         title: data.title.trim(),
         content: data.content.trim(),
-        excerpt: data.excerpt.trim() || undefined,
+        excerpt: data.excerpt?.trim() || undefined,
         status: data.status,
         categories: data.category && data.category !== 'none' ? [parseInt(data.category)] : undefined,
       };
 
       const result = await createPost(postData).unwrap();
       setSaveStatus('saved');
-      toast.success(`Post ${data.status === 'publish' ? 'published' : 'saved'} successfully!`);
+      
+      const successMessage = data.status === 'publish' 
+        ? '🎉 Post published successfully!' 
+        : '💾 Post saved as draft!';
+      toast.success(successMessage);
       
       // Navigate after brief delay to show success state
       setTimeout(() => {
         router.push(`/blog/${result.slug}`);
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
       setSaveStatus('error');
       console.error('Failed to create post:', error);
@@ -80,12 +147,16 @@ export default function CreateBlogPage() {
       // Better error messages based on error type
       let errorMessage = 'Failed to create post';
       if (error?.status === 401) {
-        errorMessage = 'Authentication required. Please sign in again.';
+        errorMessage = '🔒 Authentication required. Please sign in again.';
         router.push('/signin');
       } else if (error?.status === 403) {
-        errorMessage = 'You do not have permission to create posts.';
+        errorMessage = '⛔ You do not have permission to create posts.';
+      } else if (error?.status === 422) {
+        errorMessage = '📝 Please check your post content and try again.';
       } else if (error?.data?.message) {
-        errorMessage = error.data.message;
+        errorMessage = `❌ ${error.data.message}`;
+      } else if (error?.message) {
+        errorMessage = `❌ ${error.message}`;
       }
       
       toast.error(errorMessage);

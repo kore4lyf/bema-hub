@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { useTheme } from "next-themes";
-import { Menu, X, Sun, Moon, LogOut, User } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { setTheme as setReduxTheme } from "@/lib/features/ui/uiSlice";
 import { signOut } from "@/lib/features/auth/authSlice";
 import Logo from "./Logo";
-import { AnimatedBackground } from '@/components/core/animated-background';
-
+import { AnimatedBackground } from '@/components/motion-primitives/animated-background';
+import { motion } from "motion/react";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -22,6 +23,10 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const navContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -32,6 +37,88 @@ export function Navbar() {
       dispatch(setReduxTheme(theme as 'light' | 'dark'));
     }
   }, [theme, reduxTheme, dispatch]);
+
+  // Update indicator position when pathname changes or window resizes
+  useEffect(() => {
+    const updateIndicator = () => {
+      const filteredItems = navItems.filter((item) => 
+        (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) || isAuthenticated
+      );
+      
+      const activeItemIndex = filteredItems.findIndex(item => pathname === item.href);
+      
+      if (activeItemIndex !== -1 && navRefs.current[activeItemIndex] && navContainerRef.current) {
+        const activeLink = navRefs.current[activeItemIndex];
+        if (activeLink) {
+          const containerRect = navContainerRef.current.getBoundingClientRect();
+          const linkRect = activeLink.getBoundingClientRect();
+          
+          // Calculate position and width based on the actual link width + 4px
+          const indicatorWidth = linkRect.width + 4;
+          const indicatorLeft = linkRect.left - containerRect.left - 2; // Adjust for the extra 4px width (2px on each side)
+          
+          setIndicatorStyle({
+            left: indicatorLeft,
+            width: indicatorWidth,
+          });
+        }
+      }
+    };
+
+    // Update immediately
+    updateIndicator();
+    
+    // Update on resize
+    const handleResize = () => updateIndicator();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [pathname, isAuthenticated]);
+
+  // Initialize indicator position
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const filteredItems = navItems.filter((item) => 
+        (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) || isAuthenticated
+      );
+      
+      const activeItemIndex = filteredItems.findIndex(item => pathname === item.href);
+      
+      if (activeItemIndex !== -1 && navRefs.current[activeItemIndex] && navContainerRef.current) {
+        const activeLink = navRefs.current[activeItemIndex];
+        if (activeLink) {
+          const containerRect = navContainerRef.current.getBoundingClientRect();
+          const linkRect = activeLink.getBoundingClientRect();
+          
+          // Calculate position and width based on the actual link width + 4px
+          const indicatorWidth = linkRect.width + 4;
+          const indicatorLeft = linkRect.left - containerRect.left - 2; // Adjust for the extra 4px width (2px on each side)
+          
+          setIndicatorStyle({
+            left: indicatorLeft,
+            width: indicatorWidth,
+          });
+        }
+      } else {
+        // Set initial position to first item if no active item found
+        if (navRefs.current[0] && navContainerRef.current) {
+          const firstLink = navRefs.current[0];
+          const containerRect = navContainerRef.current.getBoundingClientRect();
+          const linkRect = firstLink.getBoundingClientRect();
+          
+          const indicatorWidth = linkRect.width + 4;
+          const indicatorLeft = linkRect.left - containerRect.left - 2;
+          
+          setIndicatorStyle({
+            left: indicatorLeft,
+            width: indicatorWidth,
+          });
+        }
+      }
+    }, 50); // Small delay to ensure DOM is ready
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -66,17 +153,37 @@ export function Navbar() {
         </div>
 
         <nav className="hidden md:flex items-center gap-6">
-          {navItems.map((item) => {
-              if (!isAuthenticated && !protectedNavRoutesName.includes(item.name) || isAuthenticated) {
-
-                return (<Link
-              key={item.name}
-              href={item.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              {item.name}
-            </Link>)}
-          })}
+          <div ref={navContainerRef} className="relative flex items-center gap-6">
+            {navItems
+              .filter((item) => 
+                (!isAuthenticated && !protectedNavRoutesName.includes(item.name)) || isAuthenticated
+              )
+              .map((item, index) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    ref={(el) => { if (el) navRefs.current[index] = el; }}
+                    className={`text-sm font-medium transition-colors px-3 py-1.5 rounded-lg relative z-10 ${
+                      isActive 
+                        ? "text-primary" 
+                        : "text-muted-foreground hover:text-primary"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            {/* Sliding background indicator - no animation */}
+            <div 
+              className="absolute bottom-0 h-2 translate-y-[18px] bg-primary transition-all duration-0"
+              style={{
+                left: `${indicatorStyle.left}px`,
+                width: `${indicatorStyle.width}px`,
+              }}
+            />
+          </div>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -113,7 +220,6 @@ export function Navbar() {
                   <div className="p-1">
                     <Link href="/profile">
                       <Button variant="ghost" className="w-full justify-start" size="sm">
-                        <User className="mr-2 h-4 w-4" />
                         Profile
                       </Button>
                     </Link>
@@ -123,7 +229,6 @@ export function Navbar() {
                       size="sm"
                       onClick={handleSignOut}
                     >
-                      <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
                     </Button>
                   </div>

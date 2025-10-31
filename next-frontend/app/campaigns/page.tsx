@@ -100,10 +100,6 @@ function CampaignsContent() {
       <main className="min-h-screen bg-background">
         <div className="container max-w-7xl px-4 py-12 sm:px-6 mx-auto">
           <div className="mb-12 text-center">
-            <Badge variant="secondary" className="mb-4 px-4 py-2">
-              <Music className="h-4 w-4 mr-2" />
-              Bema Music Campaigns
-            </Badge>
             <h1 className="mb-4 text-4xl md:text-5xl font-bold tracking-tight">
               Join the <span className="text-blue-600">Echo Loop</span>
             </h1>
